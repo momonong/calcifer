@@ -1,0 +1,127 @@
+{
+  "text_stop": [
+    {
+      "text": "fixture-ok 火。",
+      "finish": "stop"
+    }
+  ],
+  "T1": [
+    {
+      "tool": "fixture_tool",
+      "args": {
+        "action": "edit",
+        "path": "note.txt",
+        "before": "hello",
+        "after": "hello calcifer"
+      }
+    },
+    {
+      "text": "T1 complete",
+      "finish": "stop"
+    }
+  ],
+  "T2": [
+    {
+      "tool": "fixture_tool",
+      "args": {
+        "action": "probe"
+      }
+    },
+    {
+      "tool": "fixture_tool",
+      "args": {
+        "action": "edit",
+        "path": "range.mjs",
+        "before": "value > min && value < max",
+        "after": "value >= min && value <= max"
+      }
+    },
+    {
+      "text": "T2 complete",
+      "finish": "stop"
+    }
+  ],
+  "T3": [
+    {
+      "tool": "fixture_tool",
+      "args": {
+        "action": "record",
+        "operationID": "operation-fixed"
+      }
+    },
+    {
+      "text": "Receipt confirmed; operation committed once.",
+      "finish": "stop"
+    }
+  ],
+  "denied_tool": [
+    {
+      "tool": "fixture_forbidden",
+      "args": {
+        "action": "edit",
+        "path": "sentinel.txt",
+        "before": "unchanged",
+        "after": "WRONG"
+      }
+    },
+    {
+      "text": "denied",
+      "finish": "stop"
+    }
+  ],
+  "length": [
+    {
+      "text": "partial",
+      "finish": "length"
+    },
+    {
+      "text": "length continuation complete",
+      "finish": "stop"
+    }
+  ],
+  "truncated": [
+    {
+      "text": "partial",
+      "truncated": true
+    }
+  ],
+  "http_error": [
+    {
+      "status": 503
+    }
+  ],
+  "retry": [
+    {
+      "status": 503
+    },
+    {
+      "text": "retry recovered",
+      "finish": "stop"
+    }
+  ],
+  "cancel": [
+    {
+      "text": "started",
+      "hold": true
+    }
+  ],
+  "hook_throw": [
+    {
+      "text": "hook throw was ignored",
+      "finish": "stop"
+    }
+  ],
+  "truncated_tool": [
+    {
+      "tool": "fixture_tool",
+      "args": {
+        "action": "edit",
+        "path": "note.txt",
+        "before": "hello",
+        "after": "BAD"
+      },
+      "truncateArguments": true,
+      "truncated": true
+    }
+  ]
+}

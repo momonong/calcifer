@@ -1,0 +1,29 @@
+{
+  "canary": [
+    { "tool": "fixture_tool", "args": { "action": "read", "path": "note.txt" } },
+    { "text": "tool roundtrip confirmed 火。", "finish": "stop", "usage": { "prompt_tokens": 17, "completion_tokens": 5, "total_tokens": 22, "prompt_tokens_details": { "cached_tokens": 3 } } }
+  ],
+  "T1": [
+    { "tool": "fixture_tool", "args": { "action": "read", "path": "note.txt" } },
+    { "tool": "fixture_tool", "args": { "action": "edit", "path": "note.txt", "before": "hello", "after": "hello calcifer" } },
+    { "text": "T1 complete", "finish": "stop" }
+  ],
+  "T2": [
+    { "tool": "fixture_tool", "args": { "action": "read", "path": "range.mjs" } },
+    { "tool": "fixture_tool", "args": { "action": "test" } },
+    { "tool": "fixture_tool", "args": { "action": "edit", "path": "range.mjs", "before": "value > min && value < max", "after": "value >= min && value <= max" } },
+    { "tool": "fixture_tool", "args": { "action": "test" } },
+    { "text": "T2 complete", "finish": "stop" }
+  ],
+  "T3": [
+    { "tool": "fixture_tool", "args": { "action": "record", "operationID": "operation-fixed" } },
+    { "text": "Receipt confirmed; operation committed once.", "finish": "stop" }
+  ],
+  "finish_no_done": [{ "text": "partial must not be committed", "finish": "stop", "omitDone": true }],
+  "tool_no_done": [{ "tool": "fixture_tool", "args": { "action": "edit", "path": "note.txt", "before": "hello", "after": "BAD" }, "omitDone": true }],
+  "error_frame": [{ "tool": "fixture_tool", "args": { "action": "edit", "path": "note.txt", "before": "hello", "after": "BAD" }, "errorFrame": true }],
+  "cancel": [{ "text": "started", "hold": true }],
+  "length": [{ "text": "partial", "finish": "length" }, { "text": "continuation completed", "finish": "stop" }],
+  "budget_gate": [{ "text": "must never dispatch", "finish": "stop" }],
+  "unknown_gate": [{ "text": "must never dispatch", "finish": "stop" }]
+}

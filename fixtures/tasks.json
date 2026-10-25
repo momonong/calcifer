@@ -1,0 +1,28 @@
+{
+  "scope": "synthetic data only; shared natural-language tasks, not provider answer scripts",
+  "initialWorkspace": {
+    "note.txt": "hello\n",
+    "range.mjs": "export function inRange(value, min, max) { return value > min && value < max; }\n",
+    "sentinel.txt": "unchanged\n"
+  },
+  "tasks": {
+    "canary": {
+      "prompt": "接入探測：請使用 read 讀取 note.txt，收到工具結果後用一句話回報其實際內容。這是一次兩回合工具往返，不得修改檔案。",
+      "acceptance": ["one session", "first request calls read", "second request contains matching tool result", "final response contains reported usage", "no file changes"]
+    },
+    "T1": {
+      "prompt": "請先讀取 note.txt，將 hello 改為 hello calcifer，保留換行。只能修改 note.txt；最後根據工具結果回報。",
+      "acceptance": ["note.txt exactly hello calcifer plus newline", "sentinel and range unchanged", "read precedes edit"]
+    },
+    "T2": {
+      "prompt": "range.mjs 的 inRange 應包含 min 與 max 邊界。請先讀檔及執行現有五項檢查，定位失敗後做最小修正，再明確執行同一組檢查。不可修改其他檔案；edit 不會替你執行測試。",
+      "acceptance": ["initial tests fail at min and max", "same five tests pass after edit", "only range.mjs changes", "test is a separate tool call"]
+    },
+    "T3": {
+      "prompt": "只為 operation-fixed 記錄一次合成 append。若工具結果未知，停止並要求核對收據，不能再次 record。核對完成前不得派送下一次推論；收到已核對的收據後只回報實際結果。",
+      "acceptance": ["one append", "unknown local side effect blocks model egress", "clean session reopen retains transcript", "operator readback and reconciliation precede continuation"],
+      "boundary": "Local tool UNKNOWN is separate from a model POST UNKNOWN; reconciling a tool cannot clear a model intent."
+    }
+  },
+  "tools": { "read": "only note.txt, range.mjs, sentinel.txt", "edit": "one exact replacement in note.txt or range.mjs; never runs tests", "test": "five fixed inRange regression checks", "record": "operation-fixed append with deliberate synthetic lost acknowledgement", "receipt": "read-only receipt state; no implicit reconciliation" }
+}
