@@ -1,0 +1,29 @@
+{
+  "name": "selfhost-candidate-offline-only",
+  "contractCommit": "45ebfd57db5313292ae8f38e733f3e2894a99e5f",
+  "liveEnabled": false,
+  "windowStatus": "pending-owner-confirmation",
+  "endpointStatus": "pending-ready-and-models-readback",
+  "candidateBaseURL": "http://127.0.0.1:18080",
+  "offlineBaseURL": "https://calcifer.invalid/v1",
+  "model": "Qwen/Qwen3.5-4B",
+  "candidateRevision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "revisionStatus": "pending-live-exact-revision",
+  "context": 8192,
+  "contextStatus": "candidate-must-match-live-capability",
+  "maxTokens": 512,
+  "temperature": 0,
+  "topP": 1,
+  "deadlineMs": 30000,
+  "deploymentDeadlineMs": 30000,
+  "deploymentDeadlineSource": "synthetic-offline-input-must-be-confirmed-by-owner; not a models API field",
+  "ordinaryRetry": false,
+  "budget": { "requests": 40, "outputTokensReserved": 20480, "perFrameworkTask": 6, "perFrameworkCanary": 2, "concurrency": 1, "dispatchWindowMs": 1200000 },
+  "syntheticSnapshot": {
+    "id": "Qwen/Qwen3.5-4B",
+    "revision": "synthetic-offline-only",
+    "backend": "vllm",
+    "max_model_len": 8192,
+    "capabilities": { "text": true, "stream": true, "tools": true, "thinking": false, "cancellation": "drain_to_terminal", "unsupported_parameters": [] }
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+.spike-runtime/
+evidence/*
+!evidence/offline-validation-summary.json

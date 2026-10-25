@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "kind": "derived-public-summary",
+  "validationDate": "2026-10-25",
+  "publicationDate": "2026-10-26",
+  "scope": "Official pinned SDKs with synthetic in-process mock transport only. No model endpoint calls.",
+  "assertions": {
+    "tests": 35,
+    "passed": 35,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "liveRequests": 0,
+  "liveWindow": "pending-owner-confirmation",
+  "formalUI": "paused",
+  "environment": {
+    "node": "v22.22.2",
+    "os": "linux",
+    "arch": "x64"
+  },
+  "dependencies": {
+    "@opencode/sdk": "2.1.4",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "bun": "1.4.4"
+  },
+  "sourceAndFixtureHashes": {
+    "src/fixture.mjs": "a3adf6bd6262b98c5ed7d2e2aa29cf161cb77e482830ae983c45dc4f4a2b2933",
+    "src/offline-spike.mjs": "f5bbec0ce5fbb6c07067f7931baf45966e109a78e12d45e95ec405a918b50136",
+    "src/receipts.mjs": "55a6cda9808cc2f3736bf0431a4c9dc8d5a2de98151bb51e66cdca43bfde6d1e",
+    "src/request-guard.mjs": "c43c88f69ab896f3fb98a766124c915aab79fe9b51776b7a99bdb43aa12e97e7",
+    "src/selfhost-contract.mjs": "1a63eb6b06893f3783809cf74723ae679cf2d7b74685c5267e90b10c339f7bb9",
+    "src/spike.mjs": "08257f1dd850ed600d7ab52cc7c83d09b41a371c5b869249fa9e643fff99bb1b",
+    "src/worker.mjs": "65ac47d7591554231193b05ca1f44487f98577ffee20186cca644e9a3dbc49a0",
+    "test/fixture.test.mjs": "c876671211a7d16f495b521c9ea924116c28a25fc6333b8ad0293a288e2746ba",
+    "test/harness.test.mjs": "dfb926b257eea97d4a5adc5d09d92a42603095248e15a35aa99a586c0d7ae005",
+    "test/request-guard.test.mjs": "a4f08827515aa399a9bd5aad1e91b95f801060df84235d9064f0ff5a50eea3ce",
+    "test/safety.test.mjs": "4aece776d1b137fbbd04eda7300e5715c3792fd8f7fdbae44fd21622b9443eb6",
+    "test/selfhost-contract.test.mjs": "1da619e626731e4a2b7ab4b0b1ad4111f0b6d764aadf9b12a73f3ccb05c92c2d",
+    "test/selfhost-harness.test.mjs": "e5558c7bb7ed97f1a5f0f34cd8fdffcb8cc6fc04415376c72994f934d9798ac0",
+    "package.json": "b625376333ab946719a06cadc049259c980fa477b9e2645fae9b9549aadf9dc0",
+    "package-lock.json": "90e44c04f09c4fca2d0ed178672a8e5116b4767699fa4009ab257f361423787c",
+    "fixtures/scenarios.json": "4d699dd1ca102a9110f216251c6ed282f776914aaed2896aa6895b38b64d69b8",
+    "fixtures/selfhost-profile.json": "dc92db67c02f84312d4021cba6e7752f42eeea164455fa2d659e98ccd85e2730",
+    "fixtures/selfhost-scenarios.json": "b0a5dfd0103f8671d6c8cff33dbbbbd01ce13b070aa30393ba989ef24a71f979",
+    "fixtures/tasks.json": "99006401851527d48450032b4b010694200780bf6a76b21582fc7b67ac98a925"
+  },
+  "originalReceiptSHA256": "a3f424c9fa56c67a7e71079b69276ec0792a392f3c2634f556df19138cf15865",
+  "originalTestOutputSHA256": "eed7ffe6f7a24dc498ffc66f8c116d419173f69d63b5e9b2bae60126f896bdca",
+  "frameworkCases": {
+    "opencode": {
+      "canary": {
+        "status": "observed",
+        "providerRequests": 2
+      },
+      "T1": {
+        "status": "observed",
+        "providerRequests": 3
+      },
+      "T2": {
+        "status": "observed",
+        "providerRequests": 5
+      },
+      "T3": {
+        "status": "observed",
+        "providerRequests": 2
+      },
+      "finish_no_done": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "tool_no_done": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "error_frame": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "cancel": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "length": {
+        "status": "observed",
+        "providerRequests": 2
+      },
+      "budget_gate": {
+        "status": "observed",
+        "providerRequests": 0
+      },
+      "unknown_gate": {
+        "status": "observed",
+        "providerRequests": 0
+      }
+    },
+    "pi": {
+      "canary": {
+        "status": "observed",
+        "providerRequests": 2
+      },
+      "T1": {
+        "status": "observed",
+        "providerRequests": 3
+      },
+      "T2": {
+        "status": "observed",
+        "providerRequests": 5
+      },
+      "T3": {
+        "status": "observed",
+        "providerRequests": 2
+      },
+      "finish_no_done": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "tool_no_done": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "error_frame": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "cancel": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "length": {
+        "status": "observed",
+        "providerRequests": 1
+      },
+      "budget_gate": {
+        "status": "observed",
+        "providerRequests": 0
+      },
+      "unknown_gate": {
+        "status": "observed",
+        "providerRequests": 0
+      }
+    }
+  },
+  "evidenceHandling": {
+    "rawReceiptsPublished": false,
+    "rawReceiptsPreservedLocally": true,
+    "summaryIsNotFullTranscript": true,
+    "rawPayloadEventsSessionIDsRunIDsHostPathsExcluded": true,
+    "testsRerunForPublication": false
+  },
+  "limitations": [
+    "Scripted fixtures do not prove model reasoning, quality or efficiency.",
+    "No real API costs or Spark capability measured.",
+    "Native unclean crash and complete recovery not tested.",
+    "The fixture test runner is not an OS sandbox for arbitrary generated code.",
+    "Remote inference terminal state and UNKNOWN reconciliation are not proven."
+  ]
+}
