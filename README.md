@@ -1,5 +1,7 @@
 # Calcifer（卡西法）
 
+目前版本：**0.0.1**（2026-10-27，研究文件 patch）。本版公開單任務安全重開契約、固定原生 API 對照及 C1–C8 證據摘要；正式 host／UI 與 live 實測仍未啟用。
+
 最新研究方向：在 OpenCode 外建立小範圍的任務與成果工作台，讓交辦、介入、驗收及隔天接續有清楚狀態。這是待確認提案，正式 UI 繼續暫停。先讀 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)，再看 [固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
 卡西法的最小 OpenCode／Pi harness spike。以固定合成任務與同一組 mock Chat Completions 串流，查核公開 SDK 的接入、工具邊界、重試、取消與 session 讀回。
@@ -23,9 +25,12 @@ npm run test:offline
 
 Selfhost 測試另寫 `evidence/runs/offline-<time>-<id>.json`、`evidence/offline-latest.json` 與獨立 `evidence/offline-ledgers/<runID>/`，不覆寫舊 run。每框架一次兩回合工具 canary（read→matching result→final）與 T1/T2/T3 共用同一個持久帳本；錯誤、取消與預算耗盡測試各有隔離的合成 run，不能將它們加總成單一 live run。未完成的 intent 不能藉由換 framework、payload、session、runID 或重開 process 清除；沒有自動解除 UNKNOWN 的入口。
 
+- [0.0.1 更新紀錄](CHANGELOG.md)：本次公開範圍與證據界線。
+- [安全重開契約](docs/research/safe-reopen-contract-2026-10-27.md)／[固定原生 API](docs/research/native-reopen-api-map-2026-10-27.md)：觀察與接續分開，維持 UNKNOWN 與原始身分。
+- [C1–C8 證據映射](docs/research/safe-reopen-evidence-map-2026-10-27.md)／[機讀摘要](docs/research/safe-reopen-evidence-map-2026-10-27.json)／[設計案例](docs/research/safe-reopen-cases-2026-10-27.json)／[版本證據說明](docs/research/safe-reopen-evidence-2026-10-27.json)：C1／3／4／8 只有部分離線子步驟；C2／5／6／7 無完整實例，八個完整 host 案例執行數為 0。
 - [驗證計畫](docs/spike-plan.md)：固定任務、範圍、成功條件與停止條件。
 - [實作與證據界線](docs/spike-implementation.md)：實際 API、失敗、重跑方式與未驗證部分。
-- [公開驗證摘要](evidence/offline-validation-summary.json)：既有35/35結果、固定版本、source hashes與原始收據hash；不含完整payload/events。
+- [公開驗證摘要](evidence/offline-validation-summary.json)：0.0.0 的歷史 35/35 結果、固定版本、source hashes 與原始收據 hash；本版保持原樣，沒有重跑。17 個 source／test／fixture／profile 檔案不變，package 與 lockfile 僅更新版本欄位，不能把舊 package hashes 當成本版 hashes。
 - [失敗與限制摘要](docs/offline-preparation-report.md)：保留已知失敗、修正及尚未驗證的界線。
 - [離線準備報告](docs/offline-preparation-report.md)：本次 adapter、預算、完整測試收據與剩餘窗口要求。
 - [候選 profile](fixtures/selfhost-profile.json)／[共用自然語言任務](fixtures/tasks.json)：精確候選參數與待確認狀態。

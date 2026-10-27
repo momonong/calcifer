@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 2,
+  "kind": "minimal-derived-public-evidence-summary",
+  "publicationDate": "2026-10-27",
+  "version": "0.0.1",
+  "scope": "C1-C8 research contract; partial historical offline substeps only; no implemented production host or UI.",
+  "publicationPolicy": {
+    "privateOriginalsPreserved": true,
+    "rawEvidencePublished": false,
+    "excluded": "Private locations, actual chat/turn/session/run/intent/operation identifiers, raw messages, full traces, per-record ledger paths and JSON pointers."
+  },
+  "evidenceLevels": {
+    "R": "Retained historical offline observations summarized here; not live execution or user acceptance.",
+    "H": "Historical 0.0.0 test output: 35/35; not rerun for this publication.",
+    "S": "Pinned source inspection; API existence or write order is not an executed integration case.",
+    "P": "Proposed host behavior, fields and acceptance conditions; not implemented."
+  },
+  "historicalValidation": {
+    "version": "0.0.0",
+    "summary": "evidence/offline-validation-summary.json",
+    "tests": 35,
+    "passed": 35,
+    "failed": 0,
+    "rerunForPublication": false
+  },
+  "cases": {
+    "C1": {
+      "title": "正常完成",
+      "coverage": "partial-offline-substeps",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "固定 mock 的 T1/T2 受限檔案差異、probe 與結果快照；兩框架都有留存觀察。"
+      ],
+      "missingEvidence": [
+        "沒有完成後 host 重開、有效 pending 已清空、持久交付與工作版本綁定或人工接受流程。"
+      ],
+      "permittedNextSteps": [
+        "只讀核對已公開的歷史結果與限制；不能僅由 stop、settled 或 log.synced 宣稱產品驗收。"
+      ],
+      "evidenceLevels": [
+        "R",
+        "H",
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs",
+        "src/selfhost-contract.mjs",
+        "test/selfhost-contract.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C2": {
+      "title": "UI 斷線且 owner 存活",
+      "coverage": "source-only-no-complete-example",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "固定原生 API 具有狀態讀取及事件介面。"
+      ],
+      "missingEvidence": [
+        "沒有 UI 斷線重連、owner 身分及 snapshot／event 競態的留存實例。"
+      ],
+      "permittedNextSteps": [
+        "僅制定附著原 runtime 的候選流程；不重送 prompt、不以建立 runtime 作健康檢查。"
+      ],
+      "evidenceLevels": [
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C3": {
+      "title": "模型結果 UNKNOWN",
+      "coverage": "partial-offline-substeps",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "取消、缺 DONE 與 error frame 的既有離線案例保留未結算 intent；同帳本重開或改 payload 仍保守拒送。"
+      ],
+      "missingEvidence": [
+        "沒有遠端推論查詢、終態收據或模型 UNKNOWN 結算 API；取消不證明遠端停止。"
+      ],
+      "permittedNextSteps": [
+        "保留原始識別與預算，只讀核對並記錄遠端證據缺口；不得換模型、session 或帳本重送。"
+      ],
+      "evidenceLevels": [
+        "R",
+        "H",
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/request-guard.mjs",
+        "test/request-guard.test.mjs",
+        "src/selfhost-contract.mjs",
+        "test/selfhost-contract.test.mjs",
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C4": {
+      "title": "工具結果 UNKNOWN",
+      "coverage": "partial-offline-substeps",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "T3 在合成工具單次效果後先拒送；同程序 clean reopen、可信收據對帳後才接續，沒有第二次效果。"
+      ],
+      "missingEvidence": [
+        "沒有任意 shell／網路工具原子收據或跨程序 exactly-once；只有歷史快照，原生暫存檔不再可讀。"
+      ],
+      "permittedNextSteps": [
+        "只讀核對歷史快照；未來對可信的同一操作收據另行核對，不以工具收據清除模型 UNKNOWN。"
+      ],
+      "evidenceLevels": [
+        "R",
+        "H",
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/receipts.mjs",
+        "src/fixture.mjs",
+        "fixtures/scenarios.json",
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C5": {
+      "title": "host 重啟與過期批准",
+      "coverage": "source-only-no-complete-example",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "固定原生 source 顯示 pending 批准的記憶體生命週期及 OpenCode startup recovery 風險。"
+      ],
+      "missingEvidence": [
+        "沒有 host 死亡後批准過期或重放的實例，也沒有完整啟動前 model＋tool gate 證據。"
+      ],
+      "permittedNextSteps": [
+        "維持唯讀恢復暫停，舊批准只作歷史；不得把 clean reopen 當成 crash recovery。"
+      ],
+      "evidenceLevels": [
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C6": {
+      "title": "模型 terminal 但 native 答案未保存",
+      "coverage": "source-only-no-complete-example",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "guard 先寫 completed 再交 SDK，source 支持跨層保存窗口的推論。"
+      ],
+      "missingEvidence": [
+        "沒有在該窗口注入 crash、答案缺失或 response 恢復的實例；completed 本身不是缺口實證。"
+      ],
+      "permittedNextSteps": [
+        "若出現不一致，只檢視既有存儲並標結果缺口；不由 usage 重建答案或無聲再生成。"
+      ],
+      "evidenceLevels": [
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/request-guard.mjs",
+        "test/request-guard.test.mjs",
+        "src/selfhost-contract.mjs",
+        "test/selfhost-contract.test.mjs",
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C7": {
+      "title": "已知任務原帳本遺失",
+      "coverage": "source-only-no-complete-example",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "guard 的 ENOENT 路徑回空事件，無法自行辨識舊任務。"
+      ],
+      "missingEvidence": [
+        "沒有 task→原 ledger 持久綁定，也沒有已知任務原帳本遺失的完整實例。"
+      ],
+      "permittedNextSteps": [
+        "將 host 缺檔拒送列為必要前提；不把空事件視為零消耗或新額度，不建立新帳本繞過。"
+      ],
+      "evidenceLevels": [
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/request-guard.mjs",
+        "test/request-guard.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    },
+    "C8": {
+      "title": "已知暫停後明確接續",
+      "coverage": "partial-offline-substeps",
+      "fullHostCaseExecuted": false,
+      "supported": [
+        "T3 提供同一合成工具操作、同一 guard 的對帳後明確接續子例，未產生第二次工具效果。"
+      ],
+      "missingEvidence": [
+        "沒有 owner 唯一性、hidden queue、授權與 profile、workspace、預算及完整完成條件的重新核對。"
+      ],
+      "permittedNextSteps": [
+        "保留子例作邊界依據；真正接續須另行授權並重核全部前提，開啟畫面不能觸發接續。"
+      ],
+      "evidenceLevels": [
+        "R",
+        "H",
+        "S",
+        "P"
+      ],
+      "sourceFiles": [
+        "src/request-guard.mjs",
+        "test/request-guard.test.mjs",
+        "src/receipts.mjs",
+        "src/fixture.mjs",
+        "fixtures/scenarios.json",
+        "src/worker.mjs",
+        "test/selfhost-harness.test.mjs"
+      ],
+      "nativeAPIReference": "docs/research/native-reopen-api-map-2026-10-27.md"
+    }
+  },
+  "activity": {
+    "executedFullHostCases": 0,
+    "newTests": 0,
+    "sdkRuntimeStarts": 0,
+    "modelRequests": 0,
+    "serviceOperations": 0,
+    "dependencyInstalls": 0
+  },
+  "limitations": [
+    "C1/C3/C4/C8 have partial offline evidence only.",
+    "C2/C5/C6/C7 have no complete corresponding execution examples.",
+    "All eight full host cases remain unexecuted.",
+    "Publication and version metadata do not establish host, UI, live service, remote reconciliation or user acceptance."
+  ],
+  "companionDocument": "docs/research/safe-reopen-evidence-map-2026-10-27.md"
+}
