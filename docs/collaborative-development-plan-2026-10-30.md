@@ -40,7 +40,7 @@ Interfaces:
 
 ## Milestone 2 — 隔離協作與整合驗收（目標版本 0.0.3）
 
-M1（0.0.2）已完成審查、PR 合併與 remote main 核對。M2 細化介面及安全邊界見 [M2 契約](milestone-2-isolated-collaboration-2026-10-30.md)；最終驗收由 host.finalCheckIds 固定，單任務仍可使用。
+M1（0.0.2）已完成 [PR #2](https://github.com/momonong/calcifer/pull/2) 合併與 remote main 核對；M2 已完成 [PR #3](https://github.com/momonong/calcifer/pull/3) 合併。M2 細化介面及安全邊界見 [M2 契約](milestone-2-isolated-collaboration-2026-10-30.md)；最終驗收由 host.finalCheckIds 固定，單任務仍可使用。
 
 - [x] 薄runner只派送相依已完成的任務；各worker有隔離工作目錄，產物帶基線hash與允許的變更集合。
 - [x] 相同檔案衝突不得最後寫入者覆蓋；有相依的任務讀到已核對前置成果。無關工作保留，未通過的patch不進整合結果。
@@ -50,16 +50,18 @@ M1（0.0.2）已完成審查、PR 合併與 remote main 核對。M2 細化介面
 - [x] 合成兩任務共同完成一個修改，最終integration checks對應整合後最新hash；失敗、衝突、取消與UNKNOWN有明確結果。
 - [x] 交付可重跑CLI、必要回歸證據與版本，不宣稱模型自主拆解能力。
 
-M2 原 54/54、89/89 與首輪修正後 12/12、2/2、1/1 保留為歷史。UNKNOWN admission 已修；node:test 事件路徑仍可偽造，已移除，正式改為可信 data-only 合同；最後只補受影響的 6/6 及 CLI/legacy-kind 2/2（exit 0、0 fail/skip），未重跑全套。上述 runtime 能力 pending 不由 M3 補上；M3 只證明官方 SDK/路由/協作/檔案資料驗收整合，真實模型服務授權另缺。公開 Git 交付待原目標對話核對。
+M2 原 54/54、89/89 與首輪修正後 12/12、2/2、1/1 保留為歷史。UNKNOWN admission 已修；node:test 事件路徑仍可偽造，已移除，正式改為可信 data-only 合同；最後只補受影響的 6/6 及 CLI/legacy-kind 2/2（exit 0、0 fail/skip），未重跑全套。上述 runtime 能力 pending 不由 M3 補上；M3 只證明官方 SDK/路由/協作/檔案資料驗收整合，真實模型服務授權另缺。M2 已經 PR #3 合併並核對 remote/local main；公開工程範圍維持 data-only。
 
 ## Milestone 3 — 官方 harness 接線與交付閉環（目標版本 0.0.4）
 
-- [ ] Planner可注入，從goal取得結構化TaskPlan後先驗範圍再route；mock生成的plan始終標明mock。不得由自然語言直接授予新權限。
-- [ ] OpenCode/Pi worker透過官方SDK和既有mock transport進入相同任務/工具契約；不以自寫agent-loop冒充官方harness。
-- [ ] 實際wire記錄總system/context、工具與thinking參數。來源版本固定，adapter只做明列轉換，不依一般OpenAI-compatible宣告。
-- [ ] 規劃、執行、必要驗證共用全域授權/額度；保持單一模型請求併發，續寫亦計數。完成後不得多開review模型回合。
-- [ ] 最終報告包含目標、任務分派、diff、相關驗證、失敗/未完成、人類介入及usage unknown；工程完成與人工接受分開。
+- [x] Planner可注入，從goal取得結構化TaskPlan後先驗範圍再route；mock生成的plan始終標明mock。不得由自然語言直接授予新權限。
+- [x] OpenCode/Pi worker透過官方SDK和既有mock transport進入相同任務/工具契約；不以自寫agent-loop冒充官方harness。
+- [x] 實際wire記錄總system/context、工具與thinking參數。來源版本固定，adapter只做明列轉換，不依一般OpenAI-compatible宣告。
+- [x] 規劃、執行、必要驗證共用全域授權/額度；保持單一模型請求併發，續寫亦計數。完成後不得多開review模型回合。
+- [x] 最終報告包含目標、任務分派、diff、相關驗證、失敗/未完成、人類介入及usage unknown；工程完成與人工接受分開。
 - [ ] 只有服務窗口、模型revision/parser、資料與資源均已確認才做live；否則交付完整離線能力及精確pending清單，不以合成結果假報真能力。
+
+M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證已完成；修正前唯一完整 npm test 108/108（當時含 M3 15 項）；其後已知 budget 拒絕分類修正的最後受影響測試 6/6，均 exit 0、0 fail/skip，未重跑全套；[實際 API/維護條件](milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](goal-validation-summary-2026-10-30.json)、[live/蒸餾門檻](live-and-distillation-gates-2026-10-30.md) 明列本版 scope。mock 次數不代表模型能力；一般 runtime 驗收仍 pending。Git 交付待原目標對話核對，未自行啟動後續階段。
 
 ## Review Focus
 
