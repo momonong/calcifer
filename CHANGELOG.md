@@ -1,5 +1,14 @@
 # 更新紀錄
 
+## 0.0.3 — 2026-10-30
+
+- 新增 1–4 任務的離線協作 runner：獨立有界 UTF-8 snapshots、相依 artifacts 合成、過期/重疊衝突拒絕；來源不覆寫，未通過產物不接受。
+- 新增精確受控 read/search/原子 edit/registered check、task 工具生命週期封口；host 固定最終 check 定義與整合 manifest hash 綁定，模型無法省略最終驗收或改寫驗收腳本。
+- 新增 immutable run metadata、持久 intent/hash-chain ledger、每 workspace active/lock、UNKNOWN fail-closed 與只讀重開；沒有自動恢復/重試/清除入口。
+- 正式驗收縮小為可信 `node-data`：只掛 snapshot JSON 與 host script，拒絕 legacy node importing executable source；一般生成程式 runtime/unit-test 驗收尚未實作/驗證。namespace/env/time/output 邊界沿用，CPU/RAM/PID/seccomp 未證明。
+- 審查前 54/54、完整 89/89，以及首輪修正後 12/12、2/2、1/1 均保留歷史 scope。UNKNOWN admission 已修；首輪 node:test 完成判定仍可被二進位事件偽造，撤回「兩項 P1 均解除」，移除父 driver/wrapper，改為 data-only 合同。最終受影響驗證為 data-only adapter/協作 6/6、CLI/legacy-kind 拒絕 2/2，均 exit 0、0 fail/skip；沒有重跑全套。
+- 固定合成 demo/reopen CLI 與文件改用 node-data，input/script/protocol/manifest hashes 綁定；依賴不變，版本 0.0.3，沒有 live/UI/服務/訓練或 M3 實作。
+
 ## 0.0.2 — 2026-10-30
 
 - 依新授權加入 Milestone 1：最多四任務的嚴格 JSON/DAG 契約、host path/check 白名單、能力／priority／ID 可解釋自動路由；未知權限欄位、越權與完整計畫不可派送時明確拒絕。

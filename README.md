@@ -1,6 +1,6 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.2**（2026-10-30）。新增離線任務契約、可解釋自動路由與只規劃的 CLI。10/30 已授權自動路由與協作開發，取代先前只可人工選 profile／不做協作的決策，規格見 [協作開發計畫](docs/collaborative-development-plan-2026-10-30.md)。本版完成 Milestone 1；隔離 runner、模型 planner／worker、正式 UI 與 live 接入仍待後續階段。
+目前版本：**0.0.3**（2026-10-30）。完成離線任務契約、自動路由與 M2 的隔離 snapshot 協作、受控工具、持久 UNKNOWN gate、衝突整合及可信 data-only 檔案驗收。10/30 已授權自動路由與協作開發，取代先前人工 profile only 決策；見 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) 與 [M2 契約及限制](docs/milestone-2-isolated-collaboration-2026-10-30.md)。目前是可信 mock worker 的本機原型，一般生成程式的 runtime／unit-test 驗收尚未實作與驗證，不能以本版資料檢查宣稱真實 coding correctness；模型 planner／官方 SDK worker 接線、正式 UI 與 live 仍待後續階段。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -34,6 +34,15 @@ CLI 只讀明確指定的 JSON，輸出機讀 JSON；有效計畫 exit 0，壞�
 
 `routeTask(task, profiles, authorization)` 與 `planAssignments(plan, profiles, authorization)` 只處理已驗證 host 範圍的計畫；它們另檢查結構，但不授予檔案／check 執行權限。只在 enabled、獲 `allowedProfileIds` 授權、mode 符合且滿足全部能力的 profiles 中，以 priority 數值小者優先，再按 ID 字元順序選取，理由列出合格與排除項目。這是明確規則，成本與真實品質仍為 unknown。初版只允許 mock mode；無符合者明確拒派，任一任務拒派會使整份計畫 `assignments: []`，不自動切換付費模型。詳見 [合成 fixture 說明](fixtures/collaboration/README.md)。
 
+M2 固定合成 demo 會真的建立隔離檔案快照，兩個相依任務共同修改文字，來源不變；固定 host node-data check 在 namespace 邊界內檢查整合後的 snapshot JSON：
+
+```sh
+node src/collaboration-run-cli.mjs demo --state-root "$PWD/evidence/collaboration-runs"
+node src/collaboration-run-cli.mjs reopen --state-root "$PWD/evidence/collaboration-runs" --run-id <returned-run-id>
+```
+
+`reopen` 唯讀核對身分、帳本與接受的內容，不恢復派送或清除 UNKNOWN。工具只提供精確 read/search/edit/check；工具入口隨 task 封口；一旦 UNKNOWN，連尚未開始的 queue 都拒絕，未結算工作會阻擋新 run。最終 `host.finalCheckIds` 不受 plan 省略影響。本版只支援可信 `node-data`：僅唯讀掛載 `/input/snapshot.json` 與固定 check script，不掛 worker 可編輯的 executable workspace。check 作者必須把內容當 data，不能對 snapshot 或其衍生字串 eval/dynamic import/exec，也不能插入程式碼模板；模型不能定義 check。input/script/protocol 與 integration manifest 的 hash 綁定證據。先前 node:test 事件完成通路因可偽造已移除，不再支援 legacy `node` check，亦不自動轉換。每筆結果及最終 report.checks 都明列 `kind:'node-data'`。Linux adapter 需要 unshare/bwrap/timeout；不可用就明確拒絕，沒有無隔離 fallback。已驗證 namespace/檔案邊界，CPU/RAM/PID 配額與 seccomp 未證明，不宣稱 production 沙箱。詳細 API、上限與可信 worker 邊界見 [M2 文件](docs/milestone-2-isolated-collaboration-2026-10-30.md)。
+
 `npm test` 會先用官方 SDK 真正跑 mock harness，再用 Node 內建 test runner 核對結果。每次結果寫入唯一的 `evidence/runs/<time>-<id>.json`，`evidence/latest.json` 只保存最新索引與檔案 SHA-256。依賴安裝需要 npm 網路；mock 測試使用程序內 fetch，無 provider 網路需求。
 
 Selfhost 測試另寫 `evidence/runs/offline-<time>-<id>.json`、`evidence/offline-latest.json` 與獨立 `evidence/offline-ledgers/<runID>/`，不覆寫舊 run。每框架一次兩回合工具 canary（read→matching result→final）與 T1/T2/T3 共用同一個持久帳本；錯誤、取消與預算耗盡測試各有隔離的合成 run，不能將它們加總成單一 live run。未完成的 intent 不能藉由換 framework、payload、session、runID 或重開 process 清除；沒有自動解除 UNKNOWN 的入口。
@@ -43,7 +52,7 @@ Selfhost 測試另寫 `evidence/runs/offline-<time>-<id>.json`、`evidence/offli
 - [C1–C8 證據映射](docs/research/safe-reopen-evidence-map-2026-10-27.md)／[機讀摘要](docs/research/safe-reopen-evidence-map-2026-10-27.json)／[設計案例](docs/research/safe-reopen-cases-2026-10-27.json)／[版本證據說明](docs/research/safe-reopen-evidence-2026-10-27.json)：C1／3／4／8 只有部分離線子步驟；C2／5／6／7 無完整實例，八個完整 host 案例執行數為 0。
 - [驗證計畫](docs/spike-plan.md)：固定任務、範圍、成功條件與停止條件。
 - [實作與證據界線](docs/spike-implementation.md)：實際 API、失敗、重跑方式與未驗證部分。
-- [公開驗證摘要](evidence/offline-validation-summary.json)：0.0.0 的歷史 35/35 結果、固定版本、source hashes 與原始收據 hash；原摘要保持原樣。0.0.2 另有新功能驗證與整合測試，舊 package hashes 不能當成本版 hashes。
+- [公開驗證摘要](evidence/offline-validation-summary.json)：0.0.0 的歷史 35/35 結果、固定版本、source hashes 與原始收據 hash；原摘要保持原樣。0.0.2／0.0.3 另有新功能驗證與整合測試，舊 package hashes 不能當成本版 hashes。
 - [失敗與限制摘要](docs/offline-preparation-report.md)：保留已知失敗、修正及尚未驗證的界線。
 - [離線準備報告](docs/offline-preparation-report.md)：本次 adapter、預算、完整測試收據與剩餘窗口要求。
 - [候選 profile](fixtures/selfhost-profile.json)／[共用自然語言任務](fixtures/tasks.json)：精確候選參數與待確認狀態。
