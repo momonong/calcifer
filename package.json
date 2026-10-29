@@ -1,6 +1,6 @@
 {
   "name": "calcifer-harness-spike",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,7 +9,9 @@
   "scripts": {
     "test": "node src/spike.mjs && node src/offline-spike.mjs && node --test --experimental-test-isolation=none --test-concurrency=1 test/*.test.mjs",
     "test:offline": "node src/offline-spike.mjs && node --test --experimental-test-isolation=none --test-concurrency=1 test/selfhost*.test.mjs test/request-guard.test.mjs",
-    "spike": "node src/spike.mjs"
+    "spike": "node src/spike.mjs",
+    "test:collaboration": "node --test --test-concurrency=1 test/task-plan.test.mjs test/model-router.test.mjs",
+    "collaboration:plan": "node src/collaboration-cli.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "1.4.0",

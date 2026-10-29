@@ -1,8 +1,8 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.1**（2026-10-27，研究文件 patch）。本版公開單任務安全重開契約、固定原生 API 對照及 C1–C8 證據摘要；正式 host／UI 與 live 實測仍未啟用。
+目前版本：**0.0.2**（2026-10-30）。新增離線任務契約、可解釋自動路由與只規劃的 CLI。10/30 已授權自動路由與協作開發，取代先前只可人工選 profile／不做協作的決策，規格見 [協作開發計畫](docs/collaborative-development-plan-2026-10-30.md)。本版完成 Milestone 1；隔離 runner、模型 planner／worker、正式 UI 與 live 接入仍待後續階段。
 
-最新研究方向：在 OpenCode 外建立小範圍的任務與成果工作台，讓交辦、介入、驗收及隔天接續有清楚狀態。這是待確認提案，正式 UI 繼續暫停。先讀 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)，再看 [固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
+工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
 卡西法的最小 OpenCode／Pi harness spike。以固定合成任務與同一組 mock Chat Completions 串流，查核公開 SDK 的接入、工具邊界、重試、取消與 session 讀回。
 
@@ -21,16 +21,29 @@ npm run spike
 npm run test:offline
 ```
 
+離線協作路由可獨立重跑，不需要先執行 harness：
+
+```sh
+npm run test:collaboration
+npm run collaboration:plan -- --plan fixtures/collaboration/plan.json --registry fixtures/collaboration/mock-registry.json
+```
+
+CLI 只讀明確指定的 JSON，輸出機讀 JSON；有效計畫 exit 0，壞輸入或任何拒派 exit 1。合成案例包含有相依的 analysis → edit → verify，分給兩個 mock profiles；輸出固定標示 `kind: mock`、`modelRequests: 0`、`executesTasks: false`。framework／model 欄位只是合成 registry metadata，沒有連入真模型、SDK worker 或執行任務指令。
+
+`validateTaskPlan(value, { allowedPaths, allowedCheckIds, maxTasks = 4 })` 接受 `schemaVersion: 1`、非空 goal 與 1–4 個任務；驗證型別、未知欄位、唯一 ID、相依完整性與 DAG，回傳獨立複本。每個任務必須明列 id、instruction、dependsOn、requiredCapabilities、writePaths、checkIds；非空 writePaths 須宣告 edit 能力，非空 checkIds 須宣告 verify 能力。host registry 的 writePaths/checkIds 採精確白名單，路徑須為標準相對檔名，不支援目錄前綴或 glob。registry 由 host 提供，不能接受模型輸出來擴張它。
+
+`routeTask(task, profiles, authorization)` 與 `planAssignments(plan, profiles, authorization)` 只處理已驗證 host 範圍的計畫；它們另檢查結構，但不授予檔案／check 執行權限。只在 enabled、獲 `allowedProfileIds` 授權、mode 符合且滿足全部能力的 profiles 中，以 priority 數值小者優先，再按 ID 字元順序選取，理由列出合格與排除項目。這是明確規則，成本與真實品質仍為 unknown。初版只允許 mock mode；無符合者明確拒派，任一任務拒派會使整份計畫 `assignments: []`，不自動切換付費模型。詳見 [合成 fixture 說明](fixtures/collaboration/README.md)。
+
 `npm test` 會先用官方 SDK 真正跑 mock harness，再用 Node 內建 test runner 核對結果。每次結果寫入唯一的 `evidence/runs/<time>-<id>.json`，`evidence/latest.json` 只保存最新索引與檔案 SHA-256。依賴安裝需要 npm 網路；mock 測試使用程序內 fetch，無 provider 網路需求。
 
 Selfhost 測試另寫 `evidence/runs/offline-<time>-<id>.json`、`evidence/offline-latest.json` 與獨立 `evidence/offline-ledgers/<runID>/`，不覆寫舊 run。每框架一次兩回合工具 canary（read→matching result→final）與 T1/T2/T3 共用同一個持久帳本；錯誤、取消與預算耗盡測試各有隔離的合成 run，不能將它們加總成單一 live run。未完成的 intent 不能藉由換 framework、payload、session、runID 或重開 process 清除；沒有自動解除 UNKNOWN 的入口。
 
-- [0.0.1 更新紀錄](CHANGELOG.md)：本次公開範圍與證據界線。
+- [更新紀錄](CHANGELOG.md)：本次公開範圍與證據界線。
 - [安全重開契約](docs/research/safe-reopen-contract-2026-10-27.md)／[固定原生 API](docs/research/native-reopen-api-map-2026-10-27.md)：觀察與接續分開，維持 UNKNOWN 與原始身分。
 - [C1–C8 證據映射](docs/research/safe-reopen-evidence-map-2026-10-27.md)／[機讀摘要](docs/research/safe-reopen-evidence-map-2026-10-27.json)／[設計案例](docs/research/safe-reopen-cases-2026-10-27.json)／[版本證據說明](docs/research/safe-reopen-evidence-2026-10-27.json)：C1／3／4／8 只有部分離線子步驟；C2／5／6／7 無完整實例，八個完整 host 案例執行數為 0。
 - [驗證計畫](docs/spike-plan.md)：固定任務、範圍、成功條件與停止條件。
 - [實作與證據界線](docs/spike-implementation.md)：實際 API、失敗、重跑方式與未驗證部分。
-- [公開驗證摘要](evidence/offline-validation-summary.json)：0.0.0 的歷史 35/35 結果、固定版本、source hashes 與原始收據 hash；本版保持原樣，沒有重跑。17 個 source／test／fixture／profile 檔案不變，package 與 lockfile 僅更新版本欄位，不能把舊 package hashes 當成本版 hashes。
+- [公開驗證摘要](evidence/offline-validation-summary.json)：0.0.0 的歷史 35/35 結果、固定版本、source hashes 與原始收據 hash；原摘要保持原樣。0.0.2 另有新功能驗證與整合測試，舊 package hashes 不能當成本版 hashes。
 - [失敗與限制摘要](docs/offline-preparation-report.md)：保留已知失敗、修正及尚未驗證的界線。
 - [離線準備報告](docs/offline-preparation-report.md)：本次 adapter、預算、完整測試收據與剩餘窗口要求。
 - [候選 profile](fixtures/selfhost-profile.json)／[共用自然語言任務](fixtures/tasks.json)：精確候選參數與待確認狀態。

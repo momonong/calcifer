@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "mock",
+  "allowedPaths": [
+    "src/example.mjs"
+  ],
+  "allowedCheckIds": [
+    "fixture-check"
+  ],
+  "profiles": [
+    {
+      "id": "mock-analysis",
+      "framework": "opencode",
+      "model": "synthetic-analysis-v1",
+      "capabilities": [
+        "analysis",
+        "verify"
+      ],
+      "priority": 10,
+      "enabled": true,
+      "mode": "mock"
+    },
+    {
+      "id": "mock-edit",
+      "framework": "pi",
+      "model": "synthetic-edit-v1",
+      "capabilities": [
+        "edit"
+      ],
+      "priority": 20,
+      "enabled": true,
+      "mode": "mock"
+    }
+  ],
+  "authorization": {
+    "allowedProfileIds": [
+      "mock-analysis",
+      "mock-edit"
+    ],
+    "mode": "mock"
+  }
+}

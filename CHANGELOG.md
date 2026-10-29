@@ -1,5 +1,12 @@
 # 更新紀錄
 
+## 0.0.2 — 2026-10-30
+
+- 依新授權加入 Milestone 1：最多四任務的嚴格 JSON/DAG 契約、host path/check 白名單、能力／priority／ID 可解釋自動路由；未知權限欄位、越權與完整計畫不可派送時明確拒絕。
+- 新增可重跑 mock-only 規劃 CLI、兩個合成 profiles 與 analysis/edit/verify 相依案例。沒有任務程式、真模型、metadata discovery 或付費 fallback 執行，正式 UI 仍暫停。
+- 新增定向契約／路由／CLI 驗證。完整 `npm test` 60/60 通過；其後補上 writePaths→edit、checkIds→verify 宣告一致性檢查並跑受影響測試 27/27 通過。原 35/35 摘要仍為歷史證據，不改寫成新執行。
+- 依賴與固定 runtime 不變；package 與 lockfile 根版本更新為 0.0.2。
+
 ## 0.0.1 — 2026-10-27
 
 - 公開單任務安全重開契約、固定版本原生 API 對照、八個設計案例與 C1–C8 最小證據摘要。研究原稿保留；公開材料排除私人位置、實際執行識別、原始訊息、完整 trace 及逐筆帳本索引。

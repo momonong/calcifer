@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "goal": "Plan a synthetic example update without executing it",
+  "tasks": [
+    {
+      "id": "analysis",
+      "instruction": "Inspect the synthetic example and describe the change.",
+      "dependsOn": [],
+      "requiredCapabilities": [
+        "analysis"
+      ],
+      "writePaths": [],
+      "checkIds": []
+    },
+    {
+      "id": "edit",
+      "instruction": "Prepare a change to the synthetic example.",
+      "dependsOn": [
+        "analysis"
+      ],
+      "requiredCapabilities": [
+        "edit"
+      ],
+      "writePaths": [
+        "src/example.mjs"
+      ],
+      "checkIds": []
+    },
+    {
+      "id": "verify",
+      "instruction": "Describe the registered synthetic verification.",
+      "dependsOn": [
+        "edit"
+      ],
+      "requiredCapabilities": [
+        "verify"
+      ],
+      "writePaths": [],
+      "checkIds": [
+        "fixture-check"
+      ]
+    }
+  ]
+}

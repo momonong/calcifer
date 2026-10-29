@@ -1,12 +1,14 @@
 # 卡西法（Calcifer）選型決策
 
-更新：2026-10-26（Asia/Taipei）。狀態：使用者已確認 OpenCode 主選與明確 profile；離線準備通過，live 窗口待確認，正式 UI 暫停。
+更新：2026-10-30（Asia/Taipei）。當前決策：OpenCode 維持主選、Pi 保留對照；已授權在 host 核准 profiles 內自動路由及分段協作開發，取代先前人工 profile only／不做協作的限制。0.0.2 只完成 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) Milestone 1 的離線契約與 mock 規劃，不代表真模型協作能力或成本已驗證；live mode 不可用，正式 UI 繼續暫停。
+
+以下 10/26 研究與單模型比較保留為歷史背景；涉及「不做自動路由／多代理系統」的舊限制以本段及協作計畫為準。原模型 UNKNOWN、資源上限、無付費 fallback 與服務授權邊界仍適用。
 
 10/26補充研究推薦「薄任務／成果工作台」，具體場景、責任邊界、模型設定檔、建造順序與未決問題見 [產品方向提案](docs/product-direction-2026-10-26.md)。這不是已批准的 UI 架構。官方版本與工作台介面重新核對見 [上游研究](docs/upstream-workbench-research-2026-10-26.md)；未升級套件、未新增生成或重跑充分同版測試。下列歷史階段的「未操作Git」只描述當時，10/26已另獲完成成果合併推送授權。
 
-使用者已確認 OpenCode 維持主選，模型調度先採明確設定檔，不做自動路由；本輪只補 selfhost 離線缺口。已新增嚴格 adapter、持久 model request UNKNOWN／40 次共享預算、獨立 read/edit/test 與合成 SDK 驗證，證據見 [離線準備報告](docs/offline-preparation-report.md)。40 次真實生成額度本輪未消耗；服務恢復、現場精確 model/revision/context/deadline 核對與實測窗口另行確認，正式 UI 繼續暫停。
+10/26 的歷史階段曾採明確設定檔、不做自動路由，當時只補 selfhost 離線缺口。已新增嚴格 adapter、持久 model request UNKNOWN／40 次共享預算、獨立 read/edit/test 與合成 SDK 驗證，證據見 [離線準備報告](docs/offline-preparation-report.md)。40 次真實生成額度本輪未消耗；服務恢復、現場精確 model/revision/context/deadline 核對與實測窗口另行確認，正式 UI 繼續暫停。
 
-本次同版完整驗證 **35/35 通過**（含第一輪 characterization 回歸及新增 selfhost SDK／unit），完整輸出與 source/profile/fixture/lock hashes 見報告；下列13/13及舊收據保留為第一輪歷史證據。
+10/25–10/26 的歷史同版完整驗證 **35/35 通過**（含第一輪 characterization 回歸及新增 selfhost SDK／unit），完整輸出與 source/profile/fixture/lock hashes 見報告；下列13/13及舊收據保留為第一輪歷史證據。
 
 ## 結論
 
