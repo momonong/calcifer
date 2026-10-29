@@ -1,5 +1,13 @@
 # 更新紀錄
 
+## 0.0.4 — 2026-10-30
+
+- Node CLI 啟動固定 Bun whole-goal child；官方 OpenCode/Pi SDK 執行 planner/worker loop，直接使用 M2 工具與 data-only checks，無自建 RPC 或 agent loop。
+- planner 前持久 goal/workspace claim；獨立 mock-only 25-request/512-output/12800-reserved/單併發 gate 計入每個 lower fetch，固定 phase closure，UNKNOWN 立即封模型與工具，不挪用原 40 次 guard。
+- 嚴格 JSON plan、單 task/mixed routing、tool-call ID wire、失敗觀察/相依編輯/整合 check、取消與唯讀 reopen；完整 synthetic wire 只留本機，公開摘要標實際模型請求 0、usage/成本 unknown。
+- 記錄 OpenCode experimental session API、Pi hook 非硬 gate、固定版本停用 local-provider discovery 的 public-config workaround；lower fetch 拒絕仍保留。
+- 兩框架各 11 次合成請求接受同一檔案 diff；一般生成程式 runtime/unit-test 驗收仍 pending，未啟動 live/服務/UI/訓練。依賴不變，根版本 0.0.4；修正前唯一完整 npm test 108/108、exit 0、0 fail/skip（當時含 M3 15 項）；其後修正已知 budget 拒絕錯列 UNKNOWN，最終只跑兩 SDK budget + 必要 UNKNOWN 回歸 6/6、exit 0，未重跑全套。歷史 89/89 保留原 scope。
+
 ## 0.0.3 — 2026-10-30
 
 - 新增 1–4 任務的離線協作 runner：獨立有界 UTF-8 snapshots、相依 artifacts 合成、過期/重疊衝突拒絕；來源不覆寫，未通過產物不接受。

@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "version": "0.0.4",
+  "date": "2026-10-30",
+  "scope": "official SDK loop with scripted in-process mock; integrated file-data predicates only",
+  "runtimeCorrectness": "pending_implementation_verification",
+  "modelQuality": "pending",
+  "liveCost": "unknown",
+  "actualModelRequests": 0,
+  "runtime": {
+    "node": "22.22.2",
+    "bun": "1.4.4"
+  },
+  "policy": {
+    "kind": "mock",
+    "requests": 25,
+    "planner": 1,
+    "worker": 6,
+    "perRequestOutput": 512,
+    "reservedOutputTokens": 12800,
+    "concurrency": 1,
+    "windowMs": 120000,
+    "deadlineMs": 10000
+  },
+  "frameworks": {
+    "opencode": {
+      "version": "2.1.4",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "mock",
+      "planHash": "d3b3965d5cc9cecd4b6795920f9bb334c9f60375416dcaf4e5a6ee2eaf66afe5",
+      "requestCounts": {
+        "attempted": 11,
+        "admitted": 11,
+        "dispatched": 11,
+        "terminalConfirmed": 11
+      },
+      "reservedOutputTokens": 5632,
+      "usage": "unknown",
+      "cachedUsage": "unknown",
+      "liveCost": "unknown",
+      "wire": {
+        "hash": "9a784da7bee651be023a935a78dd0690975e1f69982371d06fe424491e70c92a",
+        "bytes": 129094,
+        "requestBytes": {
+          "min": 2847,
+          "max": 5938,
+          "sum": 47660
+        },
+        "contextBytes": {
+          "min": 2671,
+          "max": 5399,
+          "sum": 42094
+        },
+        "systemBytes": {
+          "min": 1856,
+          "max": 1856,
+          "sum": 20416
+        },
+        "measurement": "UTF-8 bytes, not token counts"
+      },
+      "tools": {
+        "search": 2,
+        "read": 2,
+        "edit": 2,
+        "check": 2
+      },
+      "checks": {
+        "kind": "node-data",
+        "observedFailed": 1,
+        "taskPassed": 1,
+        "integrationPassed": 1,
+        "finalManifestHash": "36ff459f9883ffc3c900fe494720065eb624da92f8fdfa411f3cc3c95a60085f",
+        "definitionHash": "0e2959e93d5eb41ce70508109d6ce1c8fae8dc6acac6abd50f09bbc89f272c52",
+        "inputHash": "9abd6e2d66ad50cd90702aaa9c709af98ecb785b342e3b60a03b13134d767a6f"
+      },
+      "acceptedFiles": [
+        {
+          "path": "note.txt",
+          "beforeHash": "7eb2ca55b87a4d45d66a63f76db11f9b4aa9106472a62b5865060f9fd8eadaaa",
+          "afterHash": "2ff35a57e999474dc15c7a9e770dc0443e5ed0353e68ae84071d86d85167ce1f"
+        }
+      ],
+      "thinkingWireFalse": true,
+      "extraFetchAttempts": 0,
+      "actualModelRequests": 0
+    },
+    "pi": {
+      "version": "1.4.0",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "mock",
+      "planHash": "d3b3965d5cc9cecd4b6795920f9bb334c9f60375416dcaf4e5a6ee2eaf66afe5",
+      "requestCounts": {
+        "attempted": 11,
+        "admitted": 11,
+        "dispatched": 11,
+        "terminalConfirmed": 11
+      },
+      "reservedOutputTokens": 5632,
+      "usage": "unknown",
+      "cachedUsage": "unknown",
+      "liveCost": "unknown",
+      "wire": {
+        "hash": "ce0528d9279126016ad58b2549816967217cdf196478ecb96933233b97b1a947",
+        "bytes": 93764,
+        "requestBytes": {
+          "min": 1210,
+          "max": 4286,
+          "sum": 29503
+        },
+        "contextBytes": {
+          "min": 1020,
+          "max": 3748,
+          "sum": 23933
+        },
+        "systemBytes": {
+          "min": 459,
+          "max": 459,
+          "sum": 5049
+        },
+        "measurement": "UTF-8 bytes, not token counts"
+      },
+      "tools": {
+        "search": 2,
+        "read": 2,
+        "edit": 2,
+        "check": 2
+      },
+      "checks": {
+        "kind": "node-data",
+        "observedFailed": 1,
+        "taskPassed": 1,
+        "integrationPassed": 1,
+        "finalManifestHash": "36ff459f9883ffc3c900fe494720065eb624da92f8fdfa411f3cc3c95a60085f",
+        "definitionHash": "0e2959e93d5eb41ce70508109d6ce1c8fae8dc6acac6abd50f09bbc89f272c52",
+        "inputHash": "9abd6e2d66ad50cd90702aaa9c709af98ecb785b342e3b60a03b13134d767a6f"
+      },
+      "acceptedFiles": [
+        {
+          "path": "note.txt",
+          "beforeHash": "7eb2ca55b87a4d45d66a63f76db11f9b4aa9106472a62b5865060f9fd8eadaaa",
+          "afterHash": "2ff35a57e999474dc15c7a9e770dc0443e5ed0353e68ae84071d86d85167ce1f"
+        }
+      ],
+      "thinkingWireFalse": true,
+      "extraFetchAttempts": 0,
+      "actualModelRequests": 0
+    }
+  },
+  "verification": {
+    "historicalCompleteIntegration": {
+      "command": "npm test",
+      "exitCode": 0,
+      "tests": 108,
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "newGoalCasesIncluded": 15,
+      "completeIntegrationRuns": 1,
+      "logHash": "04db07b5e5b09a23b25dd9b2dfa2f5607c25bd94a4b1936f1292c54af0c8f316",
+      "scope": "before settled pre-dispatch budget failure mapping fix",
+      "sourceHashScope": "normalComparisonSourceHashes"
+    },
+    "finalAffected": {
+      "command": "node --test --test-name-pattern='settled pre-dispatch phase budget|lost tool acknowledgement|cancel in-flight' test/goal-runner.test.mjs",
+      "exitCode": 0,
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "newBudgetCases": 2,
+      "unknownRegressionCases": 4,
+      "logHash": "c5f1fbb6658fec1336c838289a64469402a2f4e54a7843174211da13b047d851",
+      "sourceHashScope": "currentSourceHashes",
+      "completeIntegrationRerun": false
+    }
+  },
+  "comparisonClaim": "contract integration only; no quality, cost or latency ranking",
+  "normalComparisonSourceHashes": {
+    "src/goal-child.mjs": "02862f98aa7d7cb1099e55dbc70ce26fbb1be0ce71148dff815e04f178403a71",
+    "src/goal-cli.mjs": "a51afaadcb3df19dbbfa47d8d3e9d18bd8aface762381f50b786270289727dff",
+    "src/goal-fixture.mjs": "dfedeac904e5863c5e406dd87aadcf29a43defc05479b2b434350c55e466a385",
+    "src/goal-request-gate.mjs": "c8bcb190f8c983f1c1ff2483abe12760e52d2cfac706026fadaa85aa4737bc81",
+    "src/goal-runner.mjs": "bc19d57ad9600cb6453eca392133992a57aaccf84283e1231c0c9be18a987b8e",
+    "src/goal-sdk.mjs": "e00d9e508a9723d377b3b5e7c1e09cf42b7b5b6467367125a723349da2490c6d"
+  },
+  "currentSourceHashes": {
+    "src/goal-child.mjs": "02862f98aa7d7cb1099e55dbc70ce26fbb1be0ce71148dff815e04f178403a71",
+    "src/goal-cli.mjs": "a51afaadcb3df19dbbfa47d8d3e9d18bd8aface762381f50b786270289727dff",
+    "src/goal-fixture.mjs": "f34a60a3a3c26e110e1bb106896bd8aa627fc35c9029fa7e8ab6773ac242311a",
+    "src/goal-request-gate.mjs": "c9c3efdd715c5c30f504b3ead7de53363b24ffa78a323f285350dc3737b0cb7c",
+    "src/goal-runner.mjs": "a05e3a6ac3027a7434bfafcff1b1a4556abb6830284c6ff4cdd8c2bc6d258078",
+    "src/goal-sdk.mjs": "e00d9e508a9723d377b3b5e7c1e09cf42b7b5b6467367125a723349da2490c6d"
+  },
+  "normalComparisonEvidenceScope": "Saved normal runs before budget failure mapping fix; unchanged SDK/transport/check behavior reused; not a complete test of final source."
+}

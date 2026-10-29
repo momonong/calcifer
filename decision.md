@@ -1,6 +1,8 @@
 # 卡西法（Calcifer）選型決策
 
-更新：2026-10-30（Asia/Taipei）。當前決策：OpenCode 維持主選、Pi 保留對照；已授權在 host 核准 profiles 內自動路由及分段協作開發，取代先前人工 profile only／不做協作的限制。0.0.2 完成 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) Milestone 1 的離線契約與 mock 規劃；0.0.3 接續完成 [M2 的本機隔離協作原型](docs/milestone-2-isolated-collaboration-2026-10-30.md)。可信 mock worker 與 namespace check 仍不代表真模型協作能力或成本已驗證；live mode 不可用，正式 UI 繼續暫停。
+更新：2026-10-30（Asia/Taipei）。當前決策：OpenCode 維持主選、Pi 保留對照；已授權在 host 核准 profiles 內自動路由及分段協作開發，取代先前人工 profile only／不做協作的限制。0.0.2 完成 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) Milestone 1 的離線契約與 mock 規劃；0.0.3 完成並合併 [M2 的本機隔離協作原型](docs/milestone-2-isolated-collaboration-2026-10-30.md)；0.0.4 接通 [M3 官方 SDK 的離線 goal 閉環](docs/milestone-3-official-sdk-goal-flow-2026-10-30.md)。可信 mock worker 與 namespace check 仍不代表真模型協作能力或成本已驗證；live mode 不可用，正式 UI 繼續暫停。
+
+M3 已由同一 Bun whole-goal child 直接使用 M2，不新增 RPC/agent loop。兩官方 SDK 各 1 planner + 10 worker synthetic requests，接受相同整合 diff；全 wire/框架 context 差異有保存，[摘要](docs/goal-validation-summary-2026-10-30.json) 只列白名單合成欄位。OpenCode 公開 session group 仍 experimental；local-provider 空 baseURL 是固定版本 workaround，不是穩定 disable API。Pi request hook throw 仍不能代替 lower fetch 硬 gate。沒有真模型品質/成本/效能排名。
 
 目前 M2/M3 驗收只採可信 data-only check；一般生成程式 runtime／unit-test 驗收尚未實作與驗證，不是缺授權 blocked。真實模型/服務窗口仍缺必要授權。node:test 事件判定曾被二進位事件偽造繞過，已移除並拒絕 legacy node kind。
 
@@ -8,7 +10,7 @@
 |---|---|---|
 | 檔案協作與資料驗收 | 相依 snapshot/artifact 整合、固定 host script 解析 immutable JSON 並比對明列內容 | node-data；不執行 worker 可編輯程式 |
 | 一般程式 runtime／unit tests | 尚無可靠受測程式執行驗收合同 | pending implementation/verification；不能宣稱修 bug 正確 |
-| OpenCode／Pi 比較 | 下列歷史單模型 scripted mock 工程證據 | 未變成新協作模型品質/成本證據 |
+| OpenCode／Pi 比較 | 下列歷史比較及 M3 相同合成任務的官方 SDK 接線/wire | 仍無協作模型品質、成本或效率排名證據 |
 
 以下 10/26 研究與單模型比較保留為歷史背景；涉及「不做自動路由／多代理系統」的舊限制以本段及協作計畫為準。原模型 UNKNOWN、資源上限、無付費 fallback 與服務授權邊界仍適用。
 

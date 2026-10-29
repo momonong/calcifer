@@ -1,6 +1,6 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.3**（2026-10-30）。完成離線任務契約、自動路由與 M2 的隔離 snapshot 協作、受控工具、持久 UNKNOWN gate、衝突整合及可信 data-only 檔案驗收。10/30 已授權自動路由與協作開發，取代先前人工 profile only 決策；見 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) 與 [M2 契約及限制](docs/milestone-2-isolated-collaboration-2026-10-30.md)。目前是可信 mock worker 的本機原型，一般生成程式的 runtime／unit-test 驗收尚未實作與驗證，不能以本版資料檢查宣稱真實 coding correctness；模型 planner／官方 SDK worker 接線、正式 UI 與 live 仍待後續階段。
+目前版本：**0.0.4**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → 可信 data-only 驗收。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1/M2 已合併，M3 完成離線實作。一般生成程式 runtime/unit-test 驗收尚未實作/驗證；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -33,6 +33,17 @@ CLI 只讀明確指定的 JSON，輸出機讀 JSON；有效計畫 exit 0，壞�
 `validateTaskPlan(value, { allowedPaths, allowedCheckIds, maxTasks = 4 })` 接受 `schemaVersion: 1`、非空 goal 與 1–4 個任務；驗證型別、未知欄位、唯一 ID、相依完整性與 DAG，回傳獨立複本。每個任務必須明列 id、instruction、dependsOn、requiredCapabilities、writePaths、checkIds；非空 writePaths 須宣告 edit 能力，非空 checkIds 須宣告 verify 能力。host registry 的 writePaths/checkIds 採精確白名單，路徑須為標準相對檔名，不支援目錄前綴或 glob。registry 由 host 提供，不能接受模型輸出來擴張它。
 
 `routeTask(task, profiles, authorization)` 與 `planAssignments(plan, profiles, authorization)` 只處理已驗證 host 範圍的計畫；它們另檢查結構，但不授予檔案／check 執行權限。只在 enabled、獲 `allowedProfileIds` 授權、mode 符合且滿足全部能力的 profiles 中，以 priority 數值小者優先，再按 ID 字元順序選取，理由列出合格與排除項目。這是明確規則，成本與真實品質仍為 unknown。初版只允許 mock mode；無符合者明確拒派，任一任務拒派會使整份計畫 `assignments: []`，不自動切換付費模型。詳見 [合成 fixture 說明](fixtures/collaboration/README.md)。
+
+M3 的 Node CLI 啟動固定 Bun whole-goal child，兩官方 SDK 真 loop 只接程序內合成 transport：
+
+```sh
+npm run goal:run -- demo --state-root "$PWD/evidence/goal-opencode"
+npm run goal:run -- demo --framework pi --state-root "$PWD/evidence/goal-pi"
+npm run goal:run -- demo --framework mixed --state-root "$PWD/evidence/goal-mixed"
+npm run goal:run -- reopen --state-root "$PWD/evidence/goal-opencode" --run-id <returned-run-id>
+```
+
+planner 之前已持久保留 workspace/goal 身分。planner、workers 與 SDK 續輪共用獨立 mock-only 的 25 次／512 output／12800 reserved／單併發 gate，未挪用原 40 次 live smoke；UNKNOWN 立即封鎖 model/tool admission。每 phase 使用新 DB/session 與固定工具 closure，唯讀 reopen 不建立 SDK。完整合成 wire 留本機，CLI 只輸出白名單摘要；兩框架各 11 次請求只證明接線，不能當模型品質/成本/效率排名。修正前完整整合為 108/108；其後已知 budget 拒絕分類修正的最後受影響驗證為 6/6，沒有重跑全套。詳見 [M3 API、證據與維護條件](docs/milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](docs/goal-validation-summary-2026-10-30.json) 及 [live/蒸餾門檻](docs/live-and-distillation-gates-2026-10-30.md)。
 
 M2 固定合成 demo 會真的建立隔離檔案快照，兩個相依任務共同修改文字，來源不變；固定 host node-data check 在 namespace 邊界內檢查整合後的 snapshot JSON：
 
