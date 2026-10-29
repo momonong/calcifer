@@ -45,7 +45,7 @@ M1（0.0.2）已完成 [PR #2](https://github.com/momonong/calcifer/pull/2) 合�
 - [x] 薄runner只派送相依已完成的任務；各worker有隔離工作目錄，產物帶基線hash與允許的變更集合。
 - [x] 相同檔案衝突不得最後寫入者覆蓋；有相依的任務讀到已核對前置成果。無關工作保留，未通過的patch不進整合結果。
 - [x] 增加受控讀/搜尋/原子編輯/已登錄check工具；阻擋路徑穿越、symlink逃逸、過期版本、任意命令及不完整tool參數。
-- [ ] 一般生成程式 runtime/unit-test 驗收尚未實作/驗證（能力 pending，非缺授權 blocked）。本版只驗可信 node-data；OS namespace probe 不代表一般 runtime correctness 已完成。
+- [ ] 一般生成程式 runtime/unit-test 驗收尚未實作/驗證（能力 pending，非缺授權 blocked）。M2 當時只驗可信 node-data；後續 M4 另新增有限 node-json-cli，仍不支援一般測試框架；OS namespace probe 不代表一般 runtime correctness 已完成。
 - [x] 固定task/workspace/profile/ledger身分；缺帳本、未知結果與尚未結算副作用fail closed，唯讀重開不恢復派送。
 - [x] 合成兩任務共同完成一個修改，最終integration checks對應整合後最新hash；失敗、衝突、取消與UNKNOWN有明確結果。
 - [x] 交付可重跑CLI、必要回歸證據與版本，不宣稱模型自主拆解能力。
@@ -61,7 +61,18 @@ M2 原 54/54、89/89 與首輪修正後 12/12、2/2、1/1 保留為歷史。UNKN
 - [x] 最終報告包含目標、任務分派、diff、相關驗證、失敗/未完成、人類介入及usage unknown；工程完成與人工接受分開。
 - [ ] 只有服務窗口、模型revision/parser、資料與資源均已確認才做live；否則交付完整離線能力及精確pending清單，不以合成結果假報真能力。
 
-M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證已完成；修正前唯一完整 npm test 108/108（當時含 M3 15 項）；其後已知 budget 拒絕分類修正的最後受影響測試 6/6，均 exit 0、0 fail/skip，未重跑全套；[實際 API/維護條件](milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](goal-validation-summary-2026-10-30.json)、[live/蒸餾門檻](live-and-distillation-gates-2026-10-30.md) 明列本版 scope。mock 次數不代表模型能力；一般 runtime 驗收仍 pending。Git 交付待原目標對話核對，未自行啟動後續階段。
+M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證已完成；修正前唯一完整 npm test 108/108（當時含 M3 15 項）；其後已知 budget 拒絕分類修正的最後受影響測試 6/6，均 exit 0、0 fail/skip，未重跑全套；[實際 API/維護條件](milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](goal-validation-summary-2026-10-30.json)、[live/蒸餾門檻](live-and-distillation-gates-2026-10-30.md) 明列本版 scope。mock 次數不代表模型能力；一般測試框架仍 pending。M3 已由 [PR #4](https://github.com/momonong/calcifer/pull/4) 合併並核對 remote/local main。
+
+## Milestone 4 — 固定 JSON CLI 執行驗收（目標版本 0.0.5）
+
+沿用 M2 namespace/journal 與 M3 官方 loop，保留 node-data；新增單一 self-contained entry 的 `node-json-cli`，不建立通用命令 runner。
+
+- [x] 固定 host cases/expected、JSON 域及有界輸出／時間；只掛唯讀 entry，oracle 不下放。
+- [x] 真 exit 0 語義錯誤→受控修正→同三 cases 回歸，source 不變；readonly reopen 重算 raw output 與完整 coverage。
+- [x] 兩官方 SDK 相同模型／任務／工具／cases，check→read→edit→terminal，獨立 host final；沒有重複同內容模型驗證。
+- [ ] 一般專案依賴／npm／unit-test 框架、CPU/RAM/PID 配額與 seccomp；不是本次有限 CLI 的驗收聲明。
+
+詳細 scope、產品驗證與限制見 [M4 契約](milestone-4-json-cli-validation-2026-10-30.md)。Git 交付由原目標對話核對；完成這項有限增量即停，不啟動 live/UI/訓練。
 
 ## Review Focus
 

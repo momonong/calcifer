@@ -1,0 +1,1 @@
+{"schemaVersion":1,"goal":"Correct the synthetic sum CLI for the host fixed cases","tasks":[{"id":"fix","instruction":"Observe the host check, read and correct the sum CLI","dependsOn":[],"requiredCapabilities":["edit","verify"],"writePaths":["entry.mjs"],"checkIds":["final"]}]}

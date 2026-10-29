@@ -1,5 +1,13 @@
 # 更新紀錄
 
+## 0.0.5 — 2026-10-30
+
+- 保留 node-data，新增固定單 entry 的 node-json-cli：每 case 新隔離 child、stdin 僅當次 input、host 外部固定 expected，完整 close／exit 0／嚴格 JSON 域與完整值比較皆須成立。沒有通用 shell/npm/test 平台。
+- entry／完整 source manifest／全部 host cases／protocol adapter hash／Node binary identity 綁定 journal；唯讀 reopen 重算保存輸出與完整 case coverage，不信 passed flag、不啟動 runtime 或 SDK。
+- 合成減法 bug 真正常退出但值 mismatch→受控加法修正→同三 cases 通過，原 source 保留；兩官方 SDK 各 5 次 mock requests、check→read→edit 後由 host 獨立 final，無重複模型驗證。
+- 新定向 10/10、CLI 1/1；本里程碑唯一完整 npm test 121/121、exit 0、fail/skip/cancel 0。中途測試端 import／欄名錯誤及預期 RED 保留本機歷史，M3 108/6 等舊證據不改寫。
+- 根版本 0.0.5，依賴不變。只證明固定合成 CLI 黑箱語義；一般專案 runtime/unit-test 框架、CPU/RAM/PID/seccomp 仍 pending，無 live/服務/UI/訓練。
+
 ## 0.0.4 — 2026-10-30
 
 - Node CLI 啟動固定 Bun whole-goal child；官方 OpenCode/Pi SDK 執行 planner/worker loop，直接使用 M2 工具與 data-only checks，無自建 RPC 或 agent loop。

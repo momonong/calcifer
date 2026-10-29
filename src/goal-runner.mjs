@@ -5,6 +5,7 @@ import { validateTaskPlan } from './task-plan.mjs';
 import { planAssignments } from './model-router.mjs';
 import { runCollaboration, reopenRun } from './collaboration-runner.mjs';
 import { createRunState, readRunState } from './run-state.mjs';
+import { bindJsonCliDefinition, verifyJsonCliDefinition } from './json-cli-check.mjs';
 import { GoalRequestGate, MOCK_POLICY, MOCK_PROFILE, MODEL_ID } from './goal-request-gate.mjs';
 import { installGoalBoundary, runSdkPhase } from './goal-sdk.mjs';
 import { digest, hash, fail, pathList, secureRoot, snapshotWorkspace, readText, writeDurable } from './workspace-tools.mjs';
@@ -28,6 +29,10 @@ async function authority(goal, host, plannerProfileId) {
   const definitions = {};
   for (const id of host.allowedCheckIds) {
     const check = host.checks?.[id];
+    if (check?.kind === 'node-json-cli') {
+      definitions[id] = await bindJsonCliDefinition(check, { ...host, maxOutputBytes: host.limits?.maxOutputBytes }, host.hostNodeBinary);
+      continue;
+    }
     if (check?.kind !== 'node-data') fail('NODE_DATA_CHECK_REQUIRED');
     const script = await readText(dirname(check.scriptPath), basename(check.scriptPath));
     definitions[id] = { ...check, scriptHash: script.hash };
@@ -85,7 +90,7 @@ export async function runGoal({ goal, host: originalHost, plannerProfileId, tran
         const prompt = JSON.stringify({ role: 'worker', goal, task: context.task,
           dependencyFacts: context.task.dependsOn.map(taskId => ({ taskId, status: 'host-accepted' })),
           hostFinalChecks: host.finalCheckIds, budget: { ...MOCK_POLICY, alreadyAdmitted: (await gate.state()).requests },
-          scope: { readPaths: host.readPaths, writePaths: context.task.writePaths, checkIds: context.task.checkIds }, acceptance: 'Only explicit file-data predicates; runtime correctness is pending.' });
+          scope: { readPaths: host.readPaths, writePaths: context.task.writePaths, checkIds: context.task.checkIds }, acceptance: 'Host fixed checks only: node-data reads file contents; node-json-cli compares complete CLI JSON output for fixed host cases. General runtime tests remain pending.' });
         try { await phaseRun({ kind: 'worker', taskId: context.task.id, framework: profile.framework, profileId: profile.id, model: MODEL_ID }, prompt,
           async input => {
             const result = await context.tools.dispatch(input);
@@ -116,8 +121,9 @@ export async function runGoal({ goal, host: originalHost, plannerProfileId, tran
     return observed ? { phase: observed.phase, sdkSettled: observed.sdkSettled, toolsSettled: observed.toolsSettled, transportSettled: observed.transportSettled, closed: observed.closed, code: observed.preDispatchStop ?? observed.code }
       : { phase: phase.identity, sdkSettled: false, toolsSettled: phase.tools.size === 0, transportSettled: phase.pending.size === 0, closed: false };
   });
+  const acceptanceKinds = [...new Set(host.finalCheckIds.map(id => host.checks[id].kind))];
   const report = { schemaVersion: 1, kind: 'goal', runID: state.metadata.runID, runDir: state.runDir, status, ...(code ? { code } : {}), provenance,
-    acceptanceKind: 'node-data', runtimeCorrectness: 'pending_implementation_verification', integrationAccepted: status === 'completed' && inner?.integrationAccepted === true,
+    acceptanceKind: acceptanceKinds.length === 1 ? acceptanceKinds[0] : 'mixed', runtimeCorrectness: acceptanceKinds.includes('node-json-cli') ? 'fixed_json_cli_cases_only' : 'pending_implementation_verification', generalTestFrameworks: 'pending_implementation_verification', integrationAccepted: status === 'completed' && inner?.integrationAccepted === true,
     goal, plan, planHash: plan ? digest(plan) : undefined, authorityHash: authorized.authorityHash, inner,
     phases: phaseSummary,
     syntheticModelRequests: gate.wire.length, actualModelRequests: 0, requestAttempts: gate.attempted,
@@ -139,6 +145,7 @@ export async function reopenGoal(options) {
   const source = await snapshotWorkspace(metadata.hostScope.sourceDir, metadata.hostScope.sourceFiles, { limits: metadata.hostScope.limits });
   if (source.manifest.hash !== metadata.initialManifest.hash) fail('SOURCE_CHANGED');
   for (const definition of Object.values(metadata.hostScope.definitions)) {
+    if (definition.kind === 'node-json-cli') { await verifyJsonCliDefinition(definition); continue; }
     if (definition.kind !== 'node-data' || (await readText(dirname(definition.scriptPath), basename(definition.scriptPath))).hash !== definition.scriptHash) fail('CHECK_DEFINITION_CHANGED');
   }
   for (const event of state.events.filter(item => item.type === 'completed' && item.data.nativeFile))

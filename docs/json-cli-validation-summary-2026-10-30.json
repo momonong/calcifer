@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "version": "0.0.5",
+  "date": "2026-10-30",
+  "scope": "Fixed synthetic JSON CLI observable bug regression; no model-quality or general-runtime claim",
+  "runtimes": {
+    "node": "22.22.2",
+    "bun": "1.4.4",
+    "opencode": "2.1.4",
+    "pi": "1.4.0"
+  },
+  "verification": {
+    "targeted": {
+      "passed": 10,
+      "failed": 0,
+      "exit": null,
+      "exitEvidence": "Complete TAP 10/10; Node subprocess exit was not independently preserved."
+    },
+    "cli": {
+      "passed": 1,
+      "failed": 0,
+      "exit": 0
+    },
+    "full": {
+      "command": "npm test",
+      "runs": 1,
+      "passed": 121,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "exit": 0
+    }
+  },
+  "comparison": [
+    {
+      "framework": "opencode",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "scripted_mock",
+      "actualModelRequests": 0,
+      "requestCounts": {
+        "attempted": 5,
+        "admitted": 5,
+        "dispatched": 5,
+        "terminalConfirmed": 5
+      },
+      "reservedOutputTokens": 2560,
+      "toolActions": [
+        "check",
+        "read",
+        "edit"
+      ],
+      "baseline": {
+        "status": "failed",
+        "code": "CHECK_VALUE_MISMATCH",
+        "exitCode": 0,
+        "observed": -1,
+        "expected": 5,
+        "remainingCaseIds": [
+          "signed",
+          "zero"
+        ]
+      },
+      "final": {
+        "kind": "node-json-cli",
+        "status": "passed",
+        "cases": [
+          {
+            "id": "positive",
+            "input": {
+              "a": 2,
+              "b": 3
+            },
+            "expected": 5,
+            "observed": 5,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "signed",
+            "input": {
+              "a": -4,
+              "b": 7
+            },
+            "expected": 3,
+            "observed": 3,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "zero",
+            "input": {
+              "a": 0,
+              "b": -6
+            },
+            "expected": -6,
+            "observed": -6,
+            "comparison": true,
+            "closed": true
+          }
+        ],
+        "definitionHash": "71c77db9320b479f82f30cba61224fc9b6293aba4c616a6c52570efbda99f280",
+        "protocol": {
+          "kind": "node-json-cli",
+          "version": 1,
+          "implementationHash": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+          "domain": "plain-json-safe-integers-depth8-nodes1024-bytes8192-no-negative-zero",
+          "duplicateKeys": "JSON.parse-last-value",
+          "comparison": "deep-strict-equal",
+          "workerCodeExecution": true
+        },
+        "nodeBinaryHash": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+        "nodeBinaryBytes": 124679552,
+        "manifestHash": "d1f1280582ed28b72b09b71f4abef1180793636c5987f16728a9215ceb4b2599",
+        "entryHash": "55c38d15322bcfbdfb2b18f6ddf527a396237d25cc6604fb75a53f473785a944"
+      },
+      "sourceUnchanged": true,
+      "acceptedArtifact": {
+        "path": "entry.mjs",
+        "beforeHash": "d198a8b97c48b2af9ee3af5e596048a4e36453cdcdcf5a316ebdf80ce23b0b21",
+        "afterHash": "55c38d15322bcfbdfb2b18f6ddf527a396237d25cc6604fb75a53f473785a944",
+        "content": "import { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(0, 'utf8'));\nconsole.log(JSON.stringify(input.a + input.b));\n"
+      },
+      "wireHash": "3b690d955b957d6ab37947481ba7d00cd52477fdd00d0de563bc33503b916162",
+      "wireBytes": 69034,
+      "usage": "unknown",
+      "liveCost": "unknown"
+    },
+    {
+      "framework": "pi",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "scripted_mock",
+      "actualModelRequests": 0,
+      "requestCounts": {
+        "attempted": 5,
+        "admitted": 5,
+        "dispatched": 5,
+        "terminalConfirmed": 5
+      },
+      "reservedOutputTokens": 2560,
+      "toolActions": [
+        "check",
+        "read",
+        "edit"
+      ],
+      "baseline": {
+        "status": "failed",
+        "code": "CHECK_VALUE_MISMATCH",
+        "exitCode": 0,
+        "observed": -1,
+        "expected": 5,
+        "remainingCaseIds": [
+          "signed",
+          "zero"
+        ]
+      },
+      "final": {
+        "kind": "node-json-cli",
+        "status": "passed",
+        "cases": [
+          {
+            "id": "positive",
+            "input": {
+              "a": 2,
+              "b": 3
+            },
+            "expected": 5,
+            "observed": 5,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "signed",
+            "input": {
+              "a": -4,
+              "b": 7
+            },
+            "expected": 3,
+            "observed": 3,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "zero",
+            "input": {
+              "a": 0,
+              "b": -6
+            },
+            "expected": -6,
+            "observed": -6,
+            "comparison": true,
+            "closed": true
+          }
+        ],
+        "definitionHash": "71c77db9320b479f82f30cba61224fc9b6293aba4c616a6c52570efbda99f280",
+        "protocol": {
+          "kind": "node-json-cli",
+          "version": 1,
+          "implementationHash": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+          "domain": "plain-json-safe-integers-depth8-nodes1024-bytes8192-no-negative-zero",
+          "duplicateKeys": "JSON.parse-last-value",
+          "comparison": "deep-strict-equal",
+          "workerCodeExecution": true
+        },
+        "nodeBinaryHash": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+        "nodeBinaryBytes": 124679552,
+        "manifestHash": "d1f1280582ed28b72b09b71f4abef1180793636c5987f16728a9215ceb4b2599",
+        "entryHash": "55c38d15322bcfbdfb2b18f6ddf527a396237d25cc6604fb75a53f473785a944"
+      },
+      "sourceUnchanged": true,
+      "acceptedArtifact": {
+        "path": "entry.mjs",
+        "beforeHash": "d198a8b97c48b2af9ee3af5e596048a4e36453cdcdcf5a316ebdf80ce23b0b21",
+        "afterHash": "55c38d15322bcfbdfb2b18f6ddf527a396237d25cc6604fb75a53f473785a944",
+        "content": "import { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(0, 'utf8'));\nconsole.log(JSON.stringify(input.a + input.b));\n"
+      },
+      "wireHash": "f8e733b1a197c8d50676981d4ec430477f4d4a54f74707ca22126c4a34f35edd",
+      "wireBytes": 53397,
+      "usage": "unknown",
+      "liveCost": "unknown"
+    }
+  ],
+  "sourceHashes": {
+    "src/json-cli-check.mjs": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+    "src/collaboration-runner.mjs": "a26b3bf0bf5867b23c60e02dac99db0364d0eb2351c19c80063237107efd1f3b",
+    "src/goal-runner.mjs": "003bfe55a12ce1b3282ac3ea9b2fb1b8f8a54ef4ad86306442610efae731cdb3",
+    "src/goal-fixture.mjs": "8621a144abee0392e115f533ac8970827ffcffbef6ae8c765e30d68128cb9dde",
+    "src/goal-cli.mjs": "f6e67b9817b134fde2e289625302a4cf5c9c3a1c5b8f6ce1f8bfa5a9c7e0f4fb",
+    "src/goal-child.mjs": "32ab3bf9fac1aba395663a472b86337b5c4e9276fa597465dd7d8c5b40488843",
+    "test/json-cli-check.test.mjs": "1e94ad704c6ae335e9bffd49a641b0fa3aa783e5c9f4960dea1d5c93b84799f2",
+    "test/json-cli-goal.test.mjs": "c855f016a115f2f583d50a87ee1d2864b5e135c9233cc05b378f1af2007e6950",
+    "fixtures/json-cli-demo/entry.mjs": "d198a8b97c48b2af9ee3af5e596048a4e36453cdcdcf5a316ebdf80ce23b0b21",
+    "fixtures/json-cli-demo/plan.json": "68efd52453790d7e7e3d5ecf2a6d9d5732c22b302a69ee3cb21c4eaa75603820",
+    "package.json": "d3f6c8dbba62702fd0ead35744753f369d4af5371fdc2ffa5e8cfb2e18a3111d",
+    "package-lock.json": "4a85974a49a42e12994d9cc317101ace76002d7b1a5325b54359de1fd1851b00"
+  },
+  "pending": [
+    "General project dependencies/npm/unit-test frameworks",
+    "CPU/RAM/PID quotas and seccomp",
+    "Live model and service authorization window",
+    "Model quality/usage/cost/efficiency comparison"
+  ]
+}
