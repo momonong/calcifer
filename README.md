@@ -1,6 +1,6 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.4**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → 可信 data-only 驗收。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1/M2 已合併，M3 完成離線實作。一般生成程式 runtime/unit-test 驗收尚未實作/驗證；正式 UI、服務及 live 不在本輪啟動範圍。
+目前版本：**0.0.5**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data 並新增受限 node-json-cli 黑箱執行驗證。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M3 已合併；M4 完成固定 JSON CLI 合成 bug 的語義失敗、修正與同 cases 回歸。一般專案依賴／npm／unit-test 框架仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -34,7 +34,7 @@ CLI 只讀明確指定的 JSON，輸出機讀 JSON；有效計畫 exit 0，壞�
 
 `routeTask(task, profiles, authorization)` 與 `planAssignments(plan, profiles, authorization)` 只處理已驗證 host 範圍的計畫；它們另檢查結構，但不授予檔案／check 執行權限。只在 enabled、獲 `allowedProfileIds` 授權、mode 符合且滿足全部能力的 profiles 中，以 priority 數值小者優先，再按 ID 字元順序選取，理由列出合格與排除項目。這是明確規則，成本與真實品質仍為 unknown。初版只允許 mock mode；無符合者明確拒派，任一任務拒派會使整份計畫 `assignments: []`，不自動切換付費模型。詳見 [合成 fixture 說明](fixtures/collaboration/README.md)。
 
-M3 的 Node CLI 啟動固定 Bun whole-goal child，兩官方 SDK 真 loop 只接程序內合成 transport：
+Node CLI 啟動固定 Bun whole-goal child，兩官方 SDK 真 loop 只接程序內合成 transport：
 
 ```sh
 npm run goal:run -- demo --state-root "$PWD/evidence/goal-opencode"
@@ -42,6 +42,17 @@ npm run goal:run -- demo --framework pi --state-root "$PWD/evidence/goal-pi"
 npm run goal:run -- demo --framework mixed --state-root "$PWD/evidence/goal-mixed"
 npm run goal:run -- reopen --state-root "$PWD/evidence/goal-opencode" --run-id <returned-run-id>
 ```
+
+M4 使用同一官方 SDK 路徑，範例的 sum CLI 起初誤做減法；host 先觀察 exit 0 的值錯誤，腳本化 worker 再讀取及修正，最後由 host 跑全部固定 cases：
+
+```sh
+npm run goal:run -- demo --example json-cli --state-root "$PWD/evidence/json-cli-opencode"
+npm run goal:run -- demo --example json-cli --framework pi --state-root "$PWD/evidence/json-cli-pi"
+npm run goal:run -- reopen --state-root "$PWD/evidence/json-cli-opencode" --run-id <returned-run-id>
+node --test test/json-cli-check.test.mjs test/json-cli-goal.test.mjs
+```
+
+兩框架各 5 次合成請求、三次工具 check→read→edit；terminal 後不再請模型重查，由 host 獨立驗三個 cases。每 case 新隔離 child，只掛唯讀單一 entry，stdin 僅含當次 input；expected 留在 host。正常 exit 0、完整且合法的單一 JSON 與 host 值比較都必須通過，輸出「passed」或測試事件沒有驗收權。reopen 重算保存的輸出與 case coverage，不執行程式。這只證明固定合成 CLI 的公開輸入輸出語義，未證明一般程式、真模型自主修 bug 或 production hostile-code 安全。介面、域／時間／輸出上限與證據見 [M4 契約](docs/milestone-4-json-cli-validation-2026-10-30.md)。
 
 planner 之前已持久保留 workspace/goal 身分。planner、workers 與 SDK 續輪共用獨立 mock-only 的 25 次／512 output／12800 reserved／單併發 gate，未挪用原 40 次 live smoke；UNKNOWN 立即封鎖 model/tool admission。每 phase 使用新 DB/session 與固定工具 closure，唯讀 reopen 不建立 SDK。完整合成 wire 留本機，CLI 只輸出白名單摘要；兩框架各 11 次請求只證明接線，不能當模型品質/成本/效率排名。修正前完整整合為 108/108；其後已知 budget 拒絕分類修正的最後受影響驗證為 6/6，沒有重跑全套。詳見 [M3 API、證據與維護條件](docs/milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](docs/goal-validation-summary-2026-10-30.json) 及 [live/蒸餾門檻](docs/live-and-distillation-gates-2026-10-30.md)。
 
@@ -52,7 +63,7 @@ node src/collaboration-run-cli.mjs demo --state-root "$PWD/evidence/collaboratio
 node src/collaboration-run-cli.mjs reopen --state-root "$PWD/evidence/collaboration-runs" --run-id <returned-run-id>
 ```
 
-`reopen` 唯讀核對身分、帳本與接受的內容，不恢復派送或清除 UNKNOWN。工具只提供精確 read/search/edit/check；工具入口隨 task 封口；一旦 UNKNOWN，連尚未開始的 queue 都拒絕，未結算工作會阻擋新 run。最終 `host.finalCheckIds` 不受 plan 省略影響。本版只支援可信 `node-data`：僅唯讀掛載 `/input/snapshot.json` 與固定 check script，不掛 worker 可編輯的 executable workspace。check 作者必須把內容當 data，不能對 snapshot 或其衍生字串 eval/dynamic import/exec，也不能插入程式碼模板；模型不能定義 check。input/script/protocol 與 integration manifest 的 hash 綁定證據。先前 node:test 事件完成通路因可偽造已移除，不再支援 legacy `node` check，亦不自動轉換。每筆結果及最終 report.checks 都明列 `kind:'node-data'`。Linux adapter 需要 unshare/bwrap/timeout；不可用就明確拒絕，沒有無隔離 fallback。已驗證 namespace/檔案邊界，CPU/RAM/PID 配額與 seccomp 未證明，不宣稱 production 沙箱。詳細 API、上限與可信 worker 邊界見 [M2 文件](docs/milestone-2-isolated-collaboration-2026-10-30.md)。
+`reopen` 唯讀核對身分、帳本與接受的內容，不恢復派送或清除 UNKNOWN。工具只提供精確 read/search/edit/check；工具入口隨 task 封口；一旦 UNKNOWN，連尚未開始的 queue 都拒絕，未結算工作會阻擋新 run。最終 `host.finalCheckIds` 不受 plan 省略影響。M2 既有 `node-data` 路徑繼續保留：僅唯讀掛載 `/input/snapshot.json` 與固定 check script，不掛 worker 可編輯的 executable workspace。check 作者必須把內容當 data，不能對 snapshot 或其衍生字串 eval/dynamic import/exec，也不能插入程式碼模板；模型不能定義 check。input/script/protocol 與 integration manifest 的 hash 綁定證據。先前 node:test 事件完成通路因可偽造已移除，不再支援 legacy `node` check，亦不自動轉換。每筆結果及最終 report.checks 都明列實際 kind；M4 的 `node-json-cli` 使用獨立 host oracle 合同。Linux adapter 需要 unshare/bwrap/timeout；不可用就明確拒絕，沒有無隔離 fallback。已驗證 namespace/檔案邊界，CPU/RAM/PID 配額與 seccomp 未證明，不宣稱 production 沙箱。詳細 API、上限與可信 worker 邊界見 [M2 文件](docs/milestone-2-isolated-collaboration-2026-10-30.md)。
 
 `npm test` 會先用官方 SDK 真正跑 mock harness，再用 Node 內建 test runner 核對結果。每次結果寫入唯一的 `evidence/runs/<time>-<id>.json`，`evidence/latest.json` 只保存最新索引與檔案 SHA-256。依賴安裝需要 npm 網路；mock 測試使用程序內 fetch，無 provider 網路需求。
 
@@ -76,7 +87,7 @@ T3 的收據 ledger 與 egress gate 是本 spike 的本地政策。它不證明�
 
 新 guard 帳本只存 hash、預算、狀態、usage 與 request metadata；原生 SDK session 仍會保存訊息，此測試只使用隔離暫存合成資料並在 worker 結束後移除。完整 wire/events 收據也只有合成資料；不能將這個測試儲存方式直接用於真實資料，或宣稱 SDK 完全不存 prompt。
 
-真實模型品質、速度、費用、配額、Spark 適配與使用者接受都維持 `pending`／`unknown`。scripted mock 的毫秒數與合成零用量僅供工程診斷。CLI 只驗 `--version`。10/25離線階段未操作Git；10/26研究階段另依明確授權交付完成成果至Git，服務與部署仍未啟動。歷史收據與階段報告保留原狀，發布範圍見 [公開交付與證據政策](docs/publication-notes-2026-10-26.md)。
+真實模型品質、速度、費用、配額、Spark 適配與使用者接受都維持 `pending`／`unknown`。scripted mock 的毫秒數與合成零用量僅供工程診斷。最初上游原生 CLI characterization 只驗 `--version`；新增 Calcifer plan/run/goal CLI 已有各自離線整合驗證。10/25離線階段未操作Git；10/26研究階段另依明確授權交付完成成果至Git，服務與部署仍未啟動。歷史收據與階段報告保留原狀，發布範圍見 [公開交付與證據政策](docs/publication-notes-2026-10-26.md)。
 
 公開repo只保存由既有證據擷取的摘要。重跑會在本機產生完整合成raw receipts與ledger，已由.gitignore排除；沒有對真實資料做通用去敏，請勿直接公開這些輸出。原始收據及歷史中間run另保留本地，公開摘要不是完整trace或新的測試執行。
 

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { validateTaskPlan } from './task-plan.mjs';
 import { planAssignments } from './model-router.mjs';
 import { createRunState, readRunState } from './run-state.mjs';
+import { bindJsonCliDefinition, runNodeJsonCliCheck, verifyJsonCliDefinition, verifyJsonCliEvidence } from './json-cli-check.mjs';
 import { runNodeDataCheck, nodeDataCheckProtocol, readNodeDataInput } from './sandbox-check.mjs';
 import { hash, digest, fail, pathList, boundedLimits, secureRoot, readText, snapshotWorkspace,
   materializeSnapshot, diffSnapshots, applyArtifacts, createWorkspaceTools, writeDurable } from './workspace-tools.mjs';
@@ -33,7 +34,11 @@ async function prepare(host, input) {
   const checks = {}, definitions = {};
   for (const id of config.allowedCheckIds) {
     const value = config.checks[id];
-    if (!value || !['mock', 'node-data'].includes(value.kind)) fail('INVALID_CHECK_DEFINITION');
+    if (!value || !['mock', 'node-data', 'node-json-cli'].includes(value.kind)) fail('INVALID_CHECK_DEFINITION');
+    if (value.kind === 'node-json-cli') {
+      definitions[id] = await bindJsonCliDefinition(value, { ...config, maxOutputBytes: config.limits.maxOutputBytes }, config.hostNodeBinary);
+      checks[id] = definitions[id]; continue;
+    }
     const allowed = value.kind === 'mock' ? ['kind', 'definition', 'evaluate', 'timeoutMs'] : ['kind', 'scriptPath', 'timeoutMs', 'maxOutputBytes'];
     if (Object.keys(value).some(key => !allowed.includes(key))) fail('INVALID_CHECK_DEFINITION');
     const timeoutMs = value.timeoutMs ?? 1000, maxOutputBytes = value.maxOutputBytes ?? 8192;
@@ -104,10 +109,16 @@ export async function runCollaboration({ plan: input, host, worker, signal }) {
     const inputSource = JSON.stringify({ schemaVersion: 1, manifest: before.manifest, files: before.contents });
     const inputHash = check.kind === 'node-data' ? hash(inputSource) : undefined;
     const inputFile = check.kind === 'node-data' ? `${id}.snapshot.json` : undefined;
+    const entryFile = check.kind === 'node-json-cli' ? `${id}.entry.mjs` : undefined;
     const inputPath = inputFile ? join(runDir, 'checks', inputFile) : undefined;
     await append('intent', { id, kind: 'check', checkId, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, inputHash });
     let result;
-    if (check.kind === 'node-data') {
+    if (check.kind === 'node-json-cli') {
+      const entryPath = join(runDir, 'checks', entryFile);
+      await writeDurable(entryPath, before.contents[definition.entryPath], true);
+      try { result = await runNodeJsonCliCheck({ entryFile: entryPath, definition, sourceManifest: before.manifest, signal }); }
+      catch (error) { if (!error.known) throw error; result = { status: 'failed', code: error.message }; }
+    } else if (check.kind === 'node-data') {
       await writeDurable(inputPath, inputSource, true);
       try { result = await runNodeDataCheck({ inputPath, scriptPath, expectedInputHash: inputHash, expectedManifestHash: before.manifest.hash, timeoutMs: check.timeoutMs, maxOutputBytes: check.maxOutputBytes, signal, hostNodeBinary: config.hostNodeBinary, expectedProtocol: definition.protocol }); }
       catch (error) { if (!error.known) throw error; result = { status: 'failed', code: error.message }; }
@@ -120,7 +131,7 @@ export async function runCollaboration({ plan: input, host, worker, signal }) {
     try { after = await snapshotWorkspace(workspaceDir, config.sourceFiles, { limits: config.limits, complete: true }); }
     catch (error) { result = { status: 'failed', code: 'CHECK_MANIFEST_CHANGED' }; }
     if (after?.manifest.hash !== before.manifest.hash) result = { status: 'failed', code: 'CHECK_MANIFEST_CHANGED' };
-    const evidence = { checkId, ...result, kind: check.kind, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, ...(inputHash ? { inputHash, inputFile } : {}) };
+    const evidence = { checkId, ...result, kind: check.kind, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, ...(inputHash ? { inputHash, inputFile } : {}), ...(entryFile ? { entryFile } : {}) };
     checkResults.push(evidence); await append('completed', { id, resultHash: digest(evidence), evidence });
     if (result.code === 'CHECK_MANIFEST_CHANGED') fail('CHECK_MANIFEST_CHANGED');
     return evidence;
@@ -214,7 +225,7 @@ export async function reopenRun(options) {
     const integrated = await snapshotWorkspace(join(state.runDir, 'integration'), metadata.sourceFiles, { limits: metadata.limits, complete: true });
     if (integrated.manifest.hash !== state.report.finalManifestHash || metadata.finalCheckIds.some(id => !state.report.checks.some(check => check.checkId === id && check.status === 'passed' && check.manifestHash === integrated.manifest.hash && check.definitionHash === metadata.definitions[id].definitionHash))) fail('EVIDENCE_MANIFEST_MISMATCH');
   }
-  for (const definition of Object.values(metadata.definitions)) if (!['mock', 'node-data'].includes(definition.kind)) fail('CHECK_KIND_UNSUPPORTED');
+  for (const definition of Object.values(metadata.definitions)) if (!['mock', 'node-data', 'node-json-cli'].includes(definition.kind)) fail('CHECK_KIND_UNSUPPORTED');
   for (const evidence of state.report?.checks ?? []) if (metadata.definitions[evidence.checkId]?.kind === 'node-data') {
     if (evidence.kind !== 'node-data' || !evidence.inputFile || !evidence.inputHash) fail('CHECK_INPUT_MISMATCH');
     await readNodeDataInput(join(state.runDir, 'checks', evidence.inputFile), { expectedInputHash: evidence.inputHash, expectedManifestHash: evidence.manifestHash });
@@ -222,6 +233,15 @@ export async function reopenRun(options) {
   for (const [id, definition] of Object.entries(metadata.definitions)) if (definition.kind === 'node-data') {
     if (!definition.protocol || digest(definition.protocol) !== digest(nodeDataCheckProtocol())) fail('CHECK_PROTOCOL_MISMATCH');
     if ((await readText(join(state.runDir, 'checks'), `${id}.mjs`, { limits: metadata.limits })).hash !== definition.scriptHash) fail('CHECK_DEFINITION_CHANGED');
+  }
+  for (const definition of Object.values(metadata.definitions)) if (definition.kind === 'node-json-cli') await verifyJsonCliDefinition(definition);
+  for (const evidence of state.report?.checks ?? []) if (metadata.definitions[evidence.checkId]?.kind === 'node-json-cli') {
+    const definition = metadata.definitions[evidence.checkId];
+    verifyJsonCliEvidence(evidence, definition);
+    if (!evidence.entryFile || (await readText(join(state.runDir,'checks'), evidence.entryFile)).hash !== evidence.entryHash) fail('CHECK_ENTRY_MISMATCH');
+    const completion = state.events.find(event => event.type === 'completed' && event.data.evidence && digest(event.data.evidence) === digest(evidence));
+    const intent = state.events.find(event => event.type === 'intent' && event.data.id === completion?.data.id);
+    if (!completion || completion.data.resultHash !== digest(evidence) || intent?.data.manifestHash !== evidence.manifestHash || intent?.data.definitionHash !== definition.definitionHash) fail('CHECK_EVIDENCE_MISMATCH');
   }
   return { status: state.status, metadata, report: state.report, unknown: state.unknown };
 }
