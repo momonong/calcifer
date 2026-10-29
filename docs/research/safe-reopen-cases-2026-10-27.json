@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "kind": "design-examples-not-executed-tests",
+  "scope": "Single task reopen; all identifiers are synthetic placeholders; no live execution authorization.",
+  "globalRule": "Opening or refreshing a task never itself dispatches a model request, replays a tool, creates a native runtime, or replies to a pending approval.",
+  "cases": [
+    {
+      "id": "C1",
+      "path": "normal-completion",
+      "observations": {
+        "nativeWork": "settled-with-current-final-result",
+        "modelLedger": "all-terminal",
+        "toolEffects": "reconciled",
+        "pendingWork": "none",
+        "acceptanceEvidence": "sufficient-and-matches-workspace"
+      },
+      "expectedView": "ready-for-acceptance",
+      "allowedNextActions": [
+        "inspect-result",
+        "accept-or-return-result"
+      ],
+      "prohibitedActions": [
+        "rerun-verification-without-new-risk",
+        "dispatch-after-acceptance-satisfied"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "G2",
+        "T2",
+        "O1",
+        "P1"
+      ],
+      "implementationStatus": "host-completion-projection-proposed; existing-tests-cover-only-fixture-results",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C2",
+      "path": "ui-disconnection-owner-alive",
+      "observations": {
+        "owner": "same-runtime-confirmed-alive",
+        "nativeWork": "in-flight",
+        "modelLedger": "intent-without-completed",
+        "transportFailure": "not-observed",
+        "uiConnection": "reconnected"
+      },
+      "expectedView": "observe-existing-execution",
+      "allowedNextActions": [
+        "query-existing-runtime",
+        "reattach-events",
+        "display-snapshot-freshness"
+      ],
+      "prohibitedActions": [
+        "resend-original-prompt",
+        "create-second-runtime",
+        "infer-remote-failure-from-ui-disconnect"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "O1",
+        "P1"
+      ],
+      "implementationStatus": "native-read-apis-source-inspected; coordinated-host-reattach-not-tested",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C3",
+      "path": "model-result-unknown",
+      "observations": {
+        "modelLedger": "intent-and-unknown-without-completed",
+        "nativeWork": "idle-or-error",
+        "remoteInference": "unknown",
+        "clientWaiting": "stopped",
+        "streamDrained": "not-confirmed"
+      },
+      "expectedView": "needs-reconciliation",
+      "allowedNextActions": [
+        "read-original-ledger",
+        "retain-original-identifiers",
+        "record-missing-remote-status-evidence"
+      ],
+      "prohibitedActions": [
+        "retry-post",
+        "change-model-to-bypass",
+        "allocate-new-ledger",
+        "treat-native-idle-as-remote-terminal"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "G2",
+        "T1",
+        "T2"
+      ],
+      "implementationStatus": "same-ledger-conservative-denial-tested; remote-reconciliation-api-not-implemented",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C4",
+      "path": "tool-result-unknown",
+      "observations": {
+        "modelLedger": "terminal-tool-calls",
+        "toolEffects": "effect-may-exist-receipt-not-acknowledged",
+        "nativeTranscript": "tool-error-recorded"
+      },
+      "expectedView": "needs-tool-reconciliation",
+      "allowedNextActions": [
+        "read-existing-operation-receipt",
+        "verify-effect-identity-and-result",
+        "request-explicit-reconciliation"
+      ],
+      "prohibitedActions": [
+        "execute-tool-again",
+        "clear-model-unknown-with-tool-receipt",
+        "acknowledge-unverified-effect"
+      ],
+      "evidenceBasis": [
+        "G3",
+        "G4",
+        "T2"
+      ],
+      "implementationStatus": "synthetic-single-process-receipt-reconciliation-tested; general-tool-recovery-not-proven",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C5",
+      "path": "host-restart-with-stale-approval",
+      "observations": {
+        "owner": "previous-runtime-ended",
+        "nativeStorage": "previous-session-exists",
+        "approval": "previous-runtime-request-only",
+        "startupGateCoverage": "not-proven"
+      },
+      "expectedView": "read-only-recovery-hold",
+      "allowedNextActions": [
+        "inspect-last-host-checkpoint",
+        "mark-old-approval-expired",
+        "record-controlled-startup-prerequisites"
+      ],
+      "prohibitedActions": [
+        "start-runtime-as-read-probe",
+        "replay-old-approval",
+        "assume-stored-session-means-safe-resume"
+      ],
+      "evidenceBasis": [
+        "O1",
+        "P1",
+        "G4"
+      ],
+      "implementationStatus": "startup-and-ephemeral-approval-limits-source-inspected; full-crash-recovery-not-tested",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C6",
+      "path": "model-terminal-with-missing-native-result",
+      "observations": {
+        "modelLedger": "completed",
+        "remoteInference": "terminal-confirmed-by-contract",
+        "nativeResultProjection": "missing-or-unprovable",
+        "acceptanceEvidence": "insufficient"
+      },
+      "expectedView": "result-projection-gap",
+      "allowedNextActions": [
+        "inspect-existing-native-storage",
+        "record-projection-gap"
+      ],
+      "prohibitedActions": [
+        "mark-task-complete-from-ledger",
+        "regenerate-silently",
+        "reconstruct-response-from-usage"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "G2",
+        "G4",
+        "P1"
+      ],
+      "implementationStatus": "crash-window-inferred-from-write-order; not-an-executed-failure-test",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C7",
+      "path": "expected-ledger-missing",
+      "observations": {
+        "taskRecord": "existing-task-bound-to-original-ledger",
+        "ledgerFile": "missing",
+        "rawGuardStateIfCalled": "empty-events-and-zero-reservations"
+      },
+      "expectedView": "state-integrity-hold",
+      "allowedNextActions": [
+        "inspect-retained-original-state",
+        "record-missing-data"
+      ],
+      "prohibitedActions": [
+        "treat-as-new-run",
+        "choose-new-ledger-path",
+        "reset-budget"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "T1"
+      ],
+      "implementationStatus": "ENOENT-behavior-source-inspected; task-to-ledger-binding-not-implemented",
+      "fullHostCaseExecuted": false
+    },
+    {
+      "id": "C8",
+      "path": "known-pause-with-unfinished-work",
+      "observations": {
+        "owner": "single-owner-verified",
+        "nativeWork": "settled-with-no-hidden-queue",
+        "modelLedger": "all-terminal",
+        "toolEffects": "reconciled",
+        "nativeResultProjection": "verified",
+        "authorizationAndBudget": "still-valid-for-this-same-task",
+        "workspaceAndProfile": "match-approved-scope",
+        "acceptanceEvidence": "known-remaining-work"
+      },
+      "expectedView": "eligible-for-separate-continue-command",
+      "allowedNextActions": [
+        "inspect-remaining-work",
+        "submit-separate-authorized-continue-command-after-recheck"
+      ],
+      "prohibitedActions": [
+        "continue-as-side-effect-of-opening",
+        "reset-budget-or-create-new-task-identity"
+      ],
+      "evidenceBasis": [
+        "G1",
+        "G3",
+        "O1",
+        "P1"
+      ],
+      "implementationStatus": "target-host-contract-only; current-spike-has-no-production-reopen-command",
+      "fullHostCaseExecuted": false
+    }
+  ],
+  "publicationDate": "2026-10-27",
+  "publicationPolicy": "Public derivative of retained private research; no private locations, execution identifiers, raw messages, traces or per-record evidence pointers.",
+  "fullHostCasesExecuted": 0
+}

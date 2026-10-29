@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "kind": "derived-public-research-summary-not-runtime-validation",
+  "researchDate": "2026-10-27",
+  "publicationDate": "2026-10-27",
+  "scope": "Public research-document patch only; historical offline evidence is separate from current publication.",
+  "upstreamPins": {
+    "OpenCode": "68bc26b7da1990ce10ffecfbc1e09eb13aa5d824",
+    "Pi": "4a080252f06caf63a525d7873c5d94d3c23887e0"
+  },
+  "pinnedDependencies": {
+    "@opencode/sdk": "2.1.4",
+    "@opencode/plugin": "2.1.4",
+    "@opencode/cli": "2.1.4",
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-ai": "1.4.0",
+    "bun": "1.4.4"
+  },
+  "historicalBaseline": {
+    "version": "0.0.0",
+    "sourceCommit": "58683dc3ba6253f0cf7dedc6a1a43ef121842d6a",
+    "publicSummary": "evidence/offline-validation-summary.json",
+    "assertions": {
+      "tests": 35,
+      "passed": 35,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "sourceTestFixtureProfileHashes": {
+      "src/fixture.mjs": "a3adf6bd6262b98c5ed7d2e2aa29cf161cb77e482830ae983c45dc4f4a2b2933",
+      "src/offline-spike.mjs": "f5bbec0ce5fbb6c07067f7931baf45966e109a78e12d45e95ec405a918b50136",
+      "src/receipts.mjs": "55a6cda9808cc2f3736bf0431a4c9dc8d5a2de98151bb51e66cdca43bfde6d1e",
+      "src/request-guard.mjs": "c43c88f69ab896f3fb98a766124c915aab79fe9b51776b7a99bdb43aa12e97e7",
+      "src/selfhost-contract.mjs": "1a63eb6b06893f3783809cf74723ae679cf2d7b74685c5267e90b10c339f7bb9",
+      "src/spike.mjs": "08257f1dd850ed600d7ab52cc7c83d09b41a371c5b869249fa9e643fff99bb1b",
+      "src/worker.mjs": "65ac47d7591554231193b05ca1f44487f98577ffee20186cca644e9a3dbc49a0",
+      "test/fixture.test.mjs": "c876671211a7d16f495b521c9ea924116c28a25fc6333b8ad0293a288e2746ba",
+      "test/harness.test.mjs": "dfb926b257eea97d4a5adc5d09d92a42603095248e15a35aa99a586c0d7ae005",
+      "test/request-guard.test.mjs": "a4f08827515aa399a9bd5aad1e91b95f801060df84235d9064f0ff5a50eea3ce",
+      "test/safety.test.mjs": "4aece776d1b137fbbd04eda7300e5715c3792fd8f7fdbae44fd21622b9443eb6",
+      "test/selfhost-contract.test.mjs": "1da619e626731e4a2b7ab4b0b1ad4111f0b6d764aadf9b12a73f3ccb05c92c2d",
+      "test/selfhost-harness.test.mjs": "e5558c7bb7ed97f1a5f0f34cd8fdffcb8cc6fc04415376c72994f934d9798ac0",
+      "fixtures/scenarios.json": "4d699dd1ca102a9110f216251c6ed282f776914aaed2896aa6895b38b64d69b8",
+      "fixtures/selfhost-profile.json": "dc92db67c02f84312d4021cba6e7752f42eeea164455fa2d659e98ccd85e2730",
+      "fixtures/selfhost-scenarios.json": "b0a5dfd0103f8671d6c8cff33dbbbbd01ce13b070aa30393ba989ef24a71f979",
+      "fixtures/tasks.json": "99006401851527d48450032b4b010694200780bf6a76b21582fc7b67ac98a925"
+    },
+    "packageMetadataHashesForVersion0_0_0": {
+      "package.json": "b625376333ab946719a06cadc049259c980fa477b9e2645fae9b9549aadf9dc0",
+      "package-lock.json": "90e44c04f09c4fca2d0ed178672a8e5116b4767699fa4009ab257f361423787c"
+    },
+    "testsRerunForPublication": false,
+    "hashScope": "Historical package metadata hashes apply only to 0.0.0; they are not hashes for 0.0.1."
+  },
+  "currentPublication": {
+    "version": "0.0.1",
+    "baseCommit": "e0b3971dc2b2932d94ec4e2d8b101af3171c3d98",
+    "changeType": "public-research-summary-and-patch-version",
+    "unchangedSourceTestFixtureProfileFiles": 17,
+    "packageChanges": [
+      "package.json version only",
+      "package-lock.json version and packages[empty-string].version only"
+    ],
+    "dependenciesChanged": false,
+    "packageMetadataHashesForVersion0_0_1": {
+      "package.json": "3582f6037787ffc87bbbe0febb12e677fd4d628343a0f8ec5546c55af72fa227",
+      "package-lock.json": "6595a1f3fb0407933eee910d98d7e23d5676a18da017a216bee9b1be10131a85"
+    },
+    "artifactHashesExcludingThisFile": {
+      "CHANGELOG.md": "07e5338b717ac73104bc304bfa25bf0114a16ce98faaf640e925c9be04b76fa2",
+      "README.md": "3899201b12ebee2859974b6ebaff33559fbc5e810b9f7a58e6812c12c8bea1c6",
+      "docs/research/native-reopen-api-map-2026-10-27.md": "ac457c0fc7ab820bedee046f8d7008298bd0403d71d0e56bdc949dda08512e02",
+      "docs/research/safe-reopen-cases-2026-10-27.json": "f2044f25ae12e329b50e86d2e84b1a0a4345421f2b413c48715cd2102a2dc78a",
+      "docs/research/safe-reopen-contract-2026-10-27.md": "d0baa2f0c9ea77da0a604fa82dc460983a8efbf71f8210e10602dbb924572736",
+      "docs/research/safe-reopen-evidence-map-2026-10-27.json": "483657c0cbf167b1e29a3bea4fdae10284bd2bb04900c0d923e9f100f45446c0",
+      "docs/research/safe-reopen-evidence-map-2026-10-27.md": "9b12c4c3ee780e1229c4f90ceb5dfab9232e6a1bf221de4b58169b0aeba68cfa",
+      "package-lock.json": "6595a1f3fb0407933eee910d98d7e23d5676a18da017a216bee9b1be10131a85",
+      "package.json": "3582f6037787ffc87bbbe0febb12e677fd4d628343a0f8ec5546c55af72fa227"
+    },
+    "hashScope": "Hashes are computed from the public derivative bytes; this file is excluded to avoid a circular hash."
+  },
+  "evidenceCoverage": {
+    "designCases": 8,
+    "executedFullHostCases": 0,
+    "partialOfflineSubsteps": [
+      "C1",
+      "C3",
+      "C4",
+      "C8"
+    ],
+    "noCompleteCorrespondingExecutionExample": [
+      "C2",
+      "C5",
+      "C6",
+      "C7"
+    ]
+  },
+  "publicationActivity": {
+    "newTests": 0,
+    "sdkRuntimeStarts": 0,
+    "modelRequests": 0,
+    "serviceOperations": 0,
+    "dependencyInstalls": 0,
+    "checks": [
+      "JSON parsing and case coverage",
+      "relative-link and source-path existence",
+      "version-only metadata diff",
+      "sensitive-metadata and fixed-source-link checks"
+    ]
+  },
+  "preservation": {
+    "privateOriginalsPreserved": true,
+    "historicalPublicSummaryUnchanged": true,
+    "rawEvidencePublished": false,
+    "excluded": "Private locations, actual chat/turn/session/run/intent/operation identifiers, raw messages, full traces, raw ledger paths and per-record JSON pointers."
+  },
+  "limitations": [
+    "The eight cases are design examples, not executed full host integration tests.",
+    "Existing 35/35 results cover synthetic fixtures and scoped request guards at version 0.0.0 only.",
+    "Host ownership, reopen coordination, approval projection and task-to-ledger binding remain proposed.",
+    "Startup gate coverage, native crash recovery and response projection atomicity remain unverified.",
+    "No live model result or remote UNKNOWN reconciliation contract is established.",
+    "This publication does not enable formal host/UI, a service window or deployment; Git delivery is tracked separately."
+  ]
+}
