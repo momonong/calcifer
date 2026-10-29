@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "goal": "Compose two synthetic edits and verify the integrated content",
+  "tasks": [
+    {
+      "id": "first",
+      "instruction": "Append the synthetic first line.",
+      "dependsOn": [],
+      "requiredCapabilities": [
+        "edit"
+      ],
+      "writePaths": [
+        "note.txt"
+      ],
+      "checkIds": []
+    },
+    {
+      "id": "second",
+      "instruction": "Append the synthetic second line after the first result.",
+      "dependsOn": [
+        "first"
+      ],
+      "requiredCapabilities": [
+        "edit"
+      ],
+      "writePaths": [
+        "note.txt"
+      ],
+      "checkIds": []
+    }
+  ]
+}
