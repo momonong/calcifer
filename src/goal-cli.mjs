@@ -16,7 +16,7 @@ try {
   if (command === 'reopen') result = await reopenGoal({ stateRoot, runID: values.get('--run-id') });
   else {
     const framework = values.get('--framework') ?? 'opencode'; if (!['opencode','pi','mixed'].includes(framework)) throw new Error('INVALID_FRAMEWORK');
-    const example = values.get('--example') ?? 'data'; if (!['data','json-cli'].includes(example)) throw new Error('INVALID_EXAMPLE');
+    const example = values.get('--example') ?? 'data'; if (!['data','json-cli','npm-repo'].includes(example)) throw new Error('INVALID_EXAMPLE');
     const bun = fileURLToPath(new URL('../node_modules/.bin/bun', import.meta.url)), childFile = fileURLToPath(new URL('./goal-child.mjs', import.meta.url));
     const outcome = await new Promise((accept, reject) => {
       const child = spawn(bun, [childFile, framework, stateRoot, process.execPath, example], { env: { PATH: process.env.PATH }, stdio: ['ignore','pipe','pipe'] });
@@ -38,9 +38,9 @@ try {
     delete result.reopenedWithoutSDK;
   }
   process.stdout.write(JSON.stringify({ schemaVersion: 1, status: result.status, code: result.code, runID: result.runID,
-    acceptanceKind: result.acceptanceKind, runtimeCorrectness: result.runtimeCorrectness, generalTestFrameworks: result.generalTestFrameworks, provenance: result.provenance,
+    acceptanceKind: result.acceptanceKind, runtimeCorrectness: result.runtimeCorrectness, generalTestFrameworks: result.generalTestFrameworks, unitTestAssertions: result.unitTestAssertions, provenance: result.provenance,
     syntheticModelRequests: result.syntheticModelRequests, actualModelRequests: 0, requestCounts: result.requestCounts, reservedOutputTokens: result.reservedOutputTokens,
     integrationAccepted: result.integrationAccepted, finalManifestHash: result.inner?.finalManifestHash,
-    checks: result.inner?.checks.map(({ checkId, kind, status, code, manifestHash, definitionHash, inputHash, entryHash, cases, remainingCaseIds }) => ({ checkId, kind, status, code, manifestHash, definitionHash, inputHash, entryHash, cases: cases?.map(({ id, status, code, comparison }) => ({ id, status, code, comparison })), remainingCaseIds })), artifacts: result.inner?.artifacts, reopenedWithoutSDK: result.reopenedWithoutSDK })+'\n');
+    checks: result.inner?.checks.map(({ checkId, kind, status, code, manifestHash, definitionHash, inputHash, entryHash, cases, remainingCaseIds, npm, oracle }) => ({ checkId, kind, status, code, manifestHash, definitionHash, inputHash, entryHash, cases: cases?.map(({ id, status, code, comparison }) => ({ id, status, code, comparison })), remainingCaseIds, npm: npm ? { closed: npm.process.closed, exitCode: npm.process.exitCode, signal: npm.process.signal } : undefined, oracle: oracle ? { status: oracle.status, code: oracle.code, cases: oracle.cases.map(({id,status,code,comparison}) => ({id,status,code,comparison})), remainingCaseIds: oracle.remainingCaseIds } : undefined })), artifacts: result.inner?.artifacts, reopenedWithoutSDK: result.reopenedWithoutSDK })+'\n');
   if (result.status !== 'completed') process.exitCode=1;
 } catch (error) { console.log(JSON.stringify({ schemaVersion: 1, status: 'rejected', code: /^[A-Z_]+$/.test(error.message) ? error.message : 'GOAL_FAILED', actualModelRequests: 0 })); process.exitCode=1; }

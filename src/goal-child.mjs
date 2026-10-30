@@ -4,7 +4,7 @@ const [framework, stateRoot, hostNodeBinary, example] = process.argv.slice(2);
 const controller = new AbortController();
 process.on('SIGTERM', () => controller.abort()); process.on('SIGINT', () => controller.abort());
 try {
-  const fixture = await goalFixture({ framework, stateRoot, hostNodeBinary, controller, variant: example === 'json-cli' ? 'json-cli' : 'normal' });
+  const fixture = await goalFixture({ framework, stateRoot, hostNodeBinary, controller, variant: ['json-cli','npm-repo'].includes(example) ? example : 'normal' });
   const result = await runGoal({ ...fixture, signal: controller.signal });
   console.log('CALCIFER_GOAL_RESULT=' + JSON.stringify({ schemaVersion: 1, status: result.status, code: result.code, runID: result.runID }));
   process.exit(result.status === 'completed' ? 0 : 1);

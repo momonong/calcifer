@@ -1,0 +1,11 @@
+{
+  "name": "calcifer-synthetic-npm-repo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pretest": "node hook.mjs pretest",
+    "test": "node --test test/contract.test.mjs",
+    "posttest": "node hook.mjs posttest"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "sourceFiles": [
+    "package.json",
+    "test/contract.test.mjs",
+    "cli.mjs",
+    "hook.mjs",
+    "src/add.mjs"
+  ],
+  "check": {
+    "kind": "node-npm-repo",
+    "entryPath": "cli.mjs",
+    "cases": [
+      {
+        "id": "positive",
+        "input": {
+          "a": 2,
+          "b": 3
+        },
+        "expected": 5
+      },
+      {
+        "id": "signed",
+        "input": {
+          "a": -4,
+          "b": 7
+        },
+        "expected": 3
+      },
+      {
+        "id": "zero",
+        "input": {
+          "a": 0,
+          "b": -6
+        },
+        "expected": -6
+      }
+    ]
+  }
+}

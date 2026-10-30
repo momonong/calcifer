@@ -1,6 +1,6 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.5**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data 並新增受限 node-json-cli 黑箱執行驗證。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M3 已合併；M4 完成固定 JSON CLI 合成 bug 的語義失敗、修正與同 cases 回歸。一般專案依賴／npm／unit-test 框架仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
+目前版本：**0.0.6**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M4 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -55,6 +55,18 @@ node --test test/json-cli-check.test.mjs test/json-cli-goal.test.mjs
 兩框架各 5 次合成請求、三次工具 check→read→edit；terminal 後不再請模型重查，由 host 獨立驗三個 cases。每 case 新隔離 child，只掛唯讀單一 entry，stdin 僅含當次 input；expected 留在 host。正常 exit 0、完整且合法的單一 JSON 與 host 值比較都必須通過，輸出「passed」或測試事件沒有驗收權。reopen 重算保存的輸出與 case coverage，不執行程式。這只證明固定合成 CLI 的公開輸入輸出語義，未證明一般程式、真模型自主修 bug 或 production hostile-code 安全。介面、域／時間／輸出上限與證據見 [M4 契約](docs/milestone-4-json-cli-validation-2026-10-30.md)。
 
 planner 之前已持久保留 workspace/goal 身分。planner、workers 與 SDK 續輪共用獨立 mock-only 的 25 次／512 output／12800 reserved／單併發 gate，未挪用原 40 次 live smoke；UNKNOWN 立即封鎖 model/tool admission。每 phase 使用新 DB/session 與固定工具 closure，唯讀 reopen 不建立 SDK。完整合成 wire 留本機，CLI 只輸出白名單摘要；兩框架各 11 次請求只證明接線，不能當模型品質/成本/效率排名。修正前完整整合為 108/108；其後已知 budget 拒絕分類修正的最後受影響驗證為 6/6，沒有重跑全套。詳見 [M3 API、證據與維護條件](docs/milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](docs/goal-validation-summary-2026-10-30.json) 及 [live/蒸餾門檻](docs/live-and-distillation-gates-2026-10-30.md)。
+
+M5 支援固定零外部依賴、多檔 ESM repo：實際 npm test 命令觀察，加上同份 immutable snapshot 的 host JSON CLI cases；只有 npm 正常 exit0 **且**所有外部比較通過才接受。npm TAP／exit0 不是 assertions 執行證明。
+
+```sh
+npm run goal:run -- demo --example npm-repo --state-root "$PWD/evidence/npm-opencode"
+npm run goal:run -- demo --example npm-repo --framework pi --state-root "$PWD/evidence/npm-pi"
+# caller check-only：此合成來源刻意有bug，應回 failed/exit1；修正自己的repo後才會接受
+npm run repo:check -- --repo "$PWD/fixtures/npm-repo-demo" --contract "$PWD/fixtures/npm-repo-contract.json" --state-root "$PWD/evidence/repo-check"
+npm run collaboration:run -- reopen --state-root "$PWD/evidence/repo-check" --run-id <returned-run-id>
+```
+
+caller CLI 不編輯、不建立 SDK／模型，只做一次 host final並核對收據；內部 profile 是型別相容 placeholder。contract 明列有界檔案與 cases，package/test/CLI entry 由 host保護，npm script固定為 `node --test test/contract.test.mjs`，無install。SDK範例則各5次mock requests，在npm1＋oracle值錯誤後read/edit，最終npm0＋三cases通過、來源不變。M5唯一完整整合132/132、真正exit0；定向與失敗史、config/runtime/npm整樹/shell identity及可用範圍見 [M5契約](docs/milestone-5-npm-repo-validation-2026-10-30.md)／[摘要](docs/npm-repo-validation-summary-2026-10-30.json)。npm內部會使用固定shell，沒有shell-free或通用unit-test可信驗收主張。
 
 M2 固定合成 demo 會真的建立隔離檔案快照，兩個相依任務共同修改文字，來源不變；固定 host node-data check 在 namespace 邊界內檢查整合後的 snapshot JSON：
 

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { validateTaskPlan } from './task-plan.mjs';
 import { planAssignments } from './model-router.mjs';
 import { createRunState, readRunState } from './run-state.mjs';
+import { bindNpmRepoDefinition, runNpmRepoCheck, verifyNpmRepoDefinition, verifyNpmRepoEvidence, verifyNpmRepoSnapshot } from './npm-repo-check.mjs';
 import { bindJsonCliDefinition, runNodeJsonCliCheck, verifyJsonCliDefinition, verifyJsonCliEvidence } from './json-cli-check.mjs';
 import { runNodeDataCheck, nodeDataCheckProtocol, readNodeDataInput } from './sandbox-check.mjs';
 import { hash, digest, fail, pathList, boundedLimits, secureRoot, readText, snapshotWorkspace,
@@ -34,7 +35,11 @@ async function prepare(host, input) {
   const checks = {}, definitions = {};
   for (const id of config.allowedCheckIds) {
     const value = config.checks[id];
-    if (!value || !['mock', 'node-data', 'node-json-cli'].includes(value.kind)) fail('INVALID_CHECK_DEFINITION');
+    if (!value || !['mock', 'node-data', 'node-json-cli', 'node-npm-repo'].includes(value.kind)) fail('INVALID_CHECK_DEFINITION');
+    if (value.kind === 'node-npm-repo') {
+      definitions[id] = await bindNpmRepoDefinition(value, config, config.hostNodeBinary);
+      checks[id] = definitions[id]; continue;
+    }
     if (value.kind === 'node-json-cli') {
       definitions[id] = await bindJsonCliDefinition(value, { ...config, maxOutputBytes: config.limits.maxOutputBytes }, config.hostNodeBinary);
       checks[id] = definitions[id]; continue;
@@ -57,6 +62,7 @@ async function prepare(host, input) {
     definitions[id].definitionHash = digest(definitions[id]);
   }
   const initial = await snapshotWorkspace(config.sourceDir, config.sourceFiles, { writablePaths: config.allowedPaths, limits: config.limits });
+  for (const definition of Object.values(definitions)) if (definition.kind === 'node-npm-repo') verifyNpmRepoSnapshot(initial.manifest, definition);
   const authority = { sourceDir: config.sourceDir, stateRoot: config.stateRoot, sourceFiles: config.sourceFiles,
     readPaths: config.readPaths, allowedPaths: config.allowedPaths, allowedCheckIds: config.allowedCheckIds,
     finalCheckIds: config.finalCheckIds, profiles: config.profiles, authorization: config.authorization,
@@ -110,10 +116,16 @@ export async function runCollaboration({ plan: input, host, worker, signal }) {
     const inputHash = check.kind === 'node-data' ? hash(inputSource) : undefined;
     const inputFile = check.kind === 'node-data' ? `${id}.snapshot.json` : undefined;
     const entryFile = check.kind === 'node-json-cli' ? `${id}.entry.mjs` : undefined;
+    const repoSnapshot = check.kind === 'node-npm-repo' ? `${id}.repo` : undefined;
     const inputPath = inputFile ? join(runDir, 'checks', inputFile) : undefined;
     await append('intent', { id, kind: 'check', checkId, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, inputHash });
     let result;
-    if (check.kind === 'node-json-cli') {
+    if (check.kind === 'node-npm-repo') {
+      const snapshotDir = join(runDir, 'checks', repoSnapshot);
+      await materializeSnapshot(snapshotDir, before);
+      try { result = await runNpmRepoCheck({ snapshotDir, definition, signal, journal: append }); }
+      catch (error) { if (!error.known) throw error; result = { status: 'failed', code: error.message }; }
+    } else if (check.kind === 'node-json-cli') {
       const entryPath = join(runDir, 'checks', entryFile);
       await writeDurable(entryPath, before.contents[definition.entryPath], true);
       try { result = await runNodeJsonCliCheck({ entryFile: entryPath, definition, sourceManifest: before.manifest, signal }); }
@@ -131,7 +143,7 @@ export async function runCollaboration({ plan: input, host, worker, signal }) {
     try { after = await snapshotWorkspace(workspaceDir, config.sourceFiles, { limits: config.limits, complete: true }); }
     catch (error) { result = { status: 'failed', code: 'CHECK_MANIFEST_CHANGED' }; }
     if (after?.manifest.hash !== before.manifest.hash) result = { status: 'failed', code: 'CHECK_MANIFEST_CHANGED' };
-    const evidence = { checkId, ...result, kind: check.kind, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, ...(inputHash ? { inputHash, inputFile } : {}), ...(entryFile ? { entryFile } : {}) };
+    const evidence = { checkId, ...result, kind: check.kind, manifestHash: before.manifest.hash, definitionHash: definition.definitionHash, ...(inputHash ? { inputHash, inputFile } : {}), ...(entryFile ? { entryFile } : {}), ...(repoSnapshot ? { repoSnapshot } : {}) };
     checkResults.push(evidence); await append('completed', { id, resultHash: digest(evidence), evidence });
     if (result.code === 'CHECK_MANIFEST_CHANGED') fail('CHECK_MANIFEST_CHANGED');
     return evidence;
@@ -225,7 +237,7 @@ export async function reopenRun(options) {
     const integrated = await snapshotWorkspace(join(state.runDir, 'integration'), metadata.sourceFiles, { limits: metadata.limits, complete: true });
     if (integrated.manifest.hash !== state.report.finalManifestHash || metadata.finalCheckIds.some(id => !state.report.checks.some(check => check.checkId === id && check.status === 'passed' && check.manifestHash === integrated.manifest.hash && check.definitionHash === metadata.definitions[id].definitionHash))) fail('EVIDENCE_MANIFEST_MISMATCH');
   }
-  for (const definition of Object.values(metadata.definitions)) if (!['mock', 'node-data', 'node-json-cli'].includes(definition.kind)) fail('CHECK_KIND_UNSUPPORTED');
+  for (const definition of Object.values(metadata.definitions)) if (!['mock', 'node-data', 'node-json-cli', 'node-npm-repo'].includes(definition.kind)) fail('CHECK_KIND_UNSUPPORTED');
   for (const evidence of state.report?.checks ?? []) if (metadata.definitions[evidence.checkId]?.kind === 'node-data') {
     if (evidence.kind !== 'node-data' || !evidence.inputFile || !evidence.inputHash) fail('CHECK_INPUT_MISMATCH');
     await readNodeDataInput(join(state.runDir, 'checks', evidence.inputFile), { expectedInputHash: evidence.inputHash, expectedManifestHash: evidence.manifestHash });
@@ -239,6 +251,26 @@ export async function reopenRun(options) {
     const definition = metadata.definitions[evidence.checkId];
     verifyJsonCliEvidence(evidence, definition);
     if (!evidence.entryFile || (await readText(join(state.runDir,'checks'), evidence.entryFile)).hash !== evidence.entryHash) fail('CHECK_ENTRY_MISMATCH');
+    const completion = state.events.find(event => event.type === 'completed' && event.data.evidence && digest(event.data.evidence) === digest(evidence));
+    const intent = state.events.find(event => event.type === 'intent' && event.data.id === completion?.data.id);
+    if (!completion || completion.data.resultHash !== digest(evidence) || intent?.data.manifestHash !== evidence.manifestHash || intent?.data.definitionHash !== definition.definitionHash) fail('CHECK_EVIDENCE_MISMATCH');
+  }
+  for (const definition of Object.values(metadata.definitions)) if (definition.kind === 'node-npm-repo') await verifyNpmRepoDefinition(definition);
+  for (const evidence of state.report?.checks ?? []) if (metadata.definitions[evidence.checkId]?.kind === 'node-npm-repo') {
+    const definition = metadata.definitions[evidence.checkId]; verifyNpmRepoEvidence(evidence, definition);
+    for (const [stage, observation, caseId] of [['npm', evidence.npm], ...(evidence.oracle?.cases ?? []).map(item => ['oracle', item, item.id])]) {
+      const completed = state.events.find(event => event.type === 'completed' && event.data.id === observation.intentId && event.data.repoStep);
+      const intended = state.events.find(event => event.type === 'intent' && event.data.id === observation.intentId);
+      const savedObservation = completed?.data.repoStep?.observation;
+      if (!savedObservation || completed.data.resultHash !== digest(savedObservation) || completed.data.repoStep.stage !== stage || completed.data.repoStep.caseId !== caseId
+        || intended?.data.kind !== 'repo-command' || intended.data.stage !== stage || intended.data.caseId !== caseId || intended.data.manifestHash !== evidence.manifestHash || intended.data.definitionHash !== definition.definitionHash || intended.data.inputHash !== hash(stage === 'npm' ? '' : JSON.stringify(definition.cases.find(item => item.id === caseId)?.input))
+        || (stage === 'npm' ? digest(savedObservation) !== digest(observation) : Object.keys(savedObservation).some(key => digest(savedObservation[key]) !== digest(observation[key])))) fail('CHECK_STEP_EVIDENCE_MISMATCH');
+    }
+
+    if (!evidence.repoSnapshot || !evidence.emptyConfigFile) fail('CHECK_SNAPSHOT_MISSING');
+    if ((await readText(join(state.runDir, 'checks'), evidence.emptyConfigFile, { anyExtension: true })).hash !== hash('')) fail('CHECK_CONFIG_CHANGED');
+    const saved = await snapshotWorkspace(join(state.runDir, 'checks', evidence.repoSnapshot), definition.sourceFiles, { limits: metadata.limits, complete: true });
+    if (saved.manifest.hash !== evidence.manifestHash) fail('CHECK_MANIFEST_MISMATCH');
     const completion = state.events.find(event => event.type === 'completed' && event.data.evidence && digest(event.data.evidence) === digest(evidence));
     const intent = state.events.find(event => event.type === 'intent' && event.data.id === completion?.data.id);
     if (!completion || completion.data.resultHash !== digest(evidence) || intent?.data.manifestHash !== evidence.manifestHash || intent?.data.definitionHash !== definition.definitionHash) fail('CHECK_EVIDENCE_MISMATCH');

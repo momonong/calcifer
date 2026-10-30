@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { MODEL_ID } from './goal-request-gate.mjs';
 
 export async function goalFixture({ framework = 'opencode', variant = 'normal', stateRoot, hostNodeBinary, controller }) {
-  if (!['opencode','pi','mixed'].includes(framework) || !['normal','invalid-plan','out-of-scope','one-task','partial-tool','error-frame','lost-tool','cancel','phase-budget','json-cli'].includes(variant)) throw new Error('INVALID_SYNTHETIC_FIXTURE');
-  const jsonCli = variant === 'json-cli';
-  const sourceDir = fileURLToPath(new URL(jsonCli ? '../fixtures/json-cli-demo/' : '../fixtures/goal-demo/', import.meta.url)).replace(/\/$/, '');
+  if (!['opencode','pi','mixed'].includes(framework) || !['normal','invalid-plan','out-of-scope','one-task','partial-tool','error-frame','lost-tool','cancel','phase-budget','json-cli','npm-repo'].includes(variant)) throw new Error('INVALID_SYNTHETIC_FIXTURE');
+  const jsonCli = variant === 'json-cli', npmRepo = variant === 'npm-repo', executable = jsonCli || npmRepo;
+  const sourceDir = fileURLToPath(new URL(npmRepo ? '../fixtures/npm-repo-demo/' : jsonCli ? '../fixtures/json-cli-demo/' : '../fixtures/goal-demo/', import.meta.url)).replace(/\/$/, '');
   const plan = JSON.parse(await readFile(join(sourceDir, 'plan.json'), 'utf8'));
   if (variant === 'one-task') { plan.tasks = [plan.tasks[0]]; plan.tasks[0].instruction = 'Complete both note edits in one small task'; }
   if (variant === 'out-of-scope') plan.tasks[0].writePaths = ['forbidden.txt'];
@@ -21,6 +21,10 @@ export async function goalFixture({ framework = 'opencode', variant = 'normal', 
     host.checks.final = { kind: 'node-json-cli', entryPath: 'entry.mjs', cases: [
       { id: 'positive', input: { a: 2, b: 3 }, expected: 5 }, { id: 'signed', input: { a: -4, b: 7 }, expected: 3 }, { id: 'zero', input: { a: 0, b: -6 }, expected: -6 }] };
   }
+  if (npmRepo) {
+    const contract = JSON.parse(await readFile(fileURLToPath(new URL('../fixtures/npm-repo-contract.json', import.meta.url)), 'utf8'));
+    host.sourceFiles = host.readPaths = contract.sourceFiles; host.allowedPaths = ['src/add.mjs']; host.checks.final = contract.check;
+  }
   return { goal: plan.goal, host, plannerProfileId: profiles[0].id,
     toolObserver: variant === 'lost-tool' ? async ({ input }) => { if (input.action === 'edit') throw new Error('SYNTHETIC_LOST_TOOL_ACK'); } : undefined,
     transport: async ({ phase, index, payload, signal }) => {
@@ -29,15 +33,15 @@ export async function goalFixture({ framework = 'opencode', variant = 'normal', 
       else {
         const results = payload.messages.filter(message => message.role === 'tool').map(message => { try { return JSON.parse(message.content); } catch { return {}; } });
         const previous = results.findLast(item => typeof item.hash === 'string' && typeof item.content === 'string');
-        const stages = jsonCli ? ['check','read','edit'] : phase.taskId === 'first' ? ['search','read','check','edit'] : ['search','read','edit','check'];
+        const stages = executable ? ['check','read','edit'] : phase.taskId === 'first' ? ['search','read','check','edit'] : ['search','read','edit','check'];
         const stage = stages[index];
         if (stage === 'search') action = { action: 'search', args: { query: 'draft' } };
-        if (stage === 'read') action = { action: 'read', args: { path: jsonCli ? 'entry.mjs' : 'note.txt' } };
+        if (stage === 'read') action = { action: 'read', args: { path: npmRepo ? 'src/add.mjs' : jsonCli ? 'entry.mjs' : 'note.txt' } };
         if (stage === 'check') action = { action: 'check', args: { checkId: 'final' } };
-        if (stage === 'edit') action = { action: 'edit', args: { path: jsonCli ? 'entry.mjs' : 'note.txt', expectedHash: previous?.hash,
-          content: jsonCli ? previous?.content.replace('input.a - input.b','input.a + input.b') : previous?.content + (variant === 'one-task' ? 'first\nsecond\n' : phase.taskId + '\n') } };
+        if (stage === 'edit') action = { action: 'edit', args: { path: npmRepo ? 'src/add.mjs' : jsonCli ? 'entry.mjs' : 'note.txt', expectedHash: previous?.hash,
+          content: npmRepo ? previous?.content.replace('a - b','a + b') : jsonCli ? previous?.content.replace('input.a - input.b','input.a + input.b') : previous?.content + (variant === 'one-task' ? 'first\nsecond\n' : phase.taskId + '\n') } };
         if (!stage) text = 'Synthetic task work ended; host decides acceptance for fixed checks.';
-        if (variant === 'phase-budget') { action = { action: 'read', args: { path: jsonCli ? 'entry.mjs' : 'note.txt' } }; text = undefined; }
+        if (variant === 'phase-budget') { action = { action: 'read', args: { path: npmRepo ? 'src/add.mjs' : jsonCli ? 'entry.mjs' : 'note.txt' } }; text = undefined; }
       }
       const chunk = (delta, finish_reason = null) => ({ id: 'synthetic', object: 'chat.completion.chunk', created: 1, model: MODEL_ID, choices: [{ index: 0, delta, finish_reason }] });
       const frames = [chunk({ role: 'assistant', content: '' }), action

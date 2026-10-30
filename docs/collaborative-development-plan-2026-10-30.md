@@ -72,7 +72,19 @@ M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證
 - [x] 兩官方 SDK 相同模型／任務／工具／cases，check→read→edit→terminal，獨立 host final；沒有重複同內容模型驗證。
 - [ ] 一般專案依賴／npm／unit-test 框架、CPU/RAM/PID 配額與 seccomp；不是本次有限 CLI 的驗收聲明。
 
-詳細 scope、產品驗證與限制見 [M4 契約](milestone-4-json-cli-validation-2026-10-30.md)。Git 交付由原目標對話核對；完成這項有限增量即停，不啟動 live/UI/訓練。
+詳細 scope、產品驗證與限制見 [M4 契約](milestone-4-json-cli-validation-2026-10-30.md)。M4 當時在此有限增量停止，已由原目標對話交付合併；此為歷史停止點。其後新授權的 M5 見下段，仍不啟動 live/UI/訓練。
+
+## Milestone 5 — 固定零依賴 npm repo（目標版本 0.0.6）
+
+新的明確人類授權允許本輪離線 repo/npm/unit tests。沿既有 namespace/journal/SDK，新增 node-npm-repo，npm觀察＋同snapshot host oracle雙條件接受，不靠TAP/exit0宣稱assertion完成。
+
+- [x] 固定package/test/CLI entry與protected hashes；整棵實際npm runtime、Node、shell、argv/config及case定義綁證據，無install／任意command。
+- [x] 多檔baseline npm1＋真值mismatch→受控src修正→npm0＋原三cases通過；source不變，readonly reopen重算語義與每步journal。
+- [x] 兩官方SDK同task/scope各5次合成請求，無重複模型check；caller repo:check只跑一次host final，不實例化SDK。
+- [x] 唯一完整npm test132/132、exit0，必要受影響定向與失敗史保存；公開[M5契約](milestone-5-npm-repo-validation-2026-10-30.md)及[摘要](npm-repo-validation-summary-2026-10-30.json)。
+- [ ] 一般依賴／scripts／框架、assertion provenance、CPU/RAM/PID/seccomp與真模型品質；不由固定合成repo結果推定。
+
+M5完成後由原目標對話整合；若尚有有益且已授權的下一個獨立增量，依新的分支／唯一writer交接接續，不因舊M4停止文字而停工，也不為填時間擴張。硬截止仍為2026-10-30 12:00 Asia/Taipei，屆時停止新工作並結算現場。
 
 ## Review Focus
 

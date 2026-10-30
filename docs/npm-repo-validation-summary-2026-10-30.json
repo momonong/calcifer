@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "version": "0.0.6",
+  "date": "2026-10-30",
+  "scope": "Fixed zero-external-dependency ESM repository: npm command observation and independent same-snapshot host JSON CLI cases; no assertion provenance or general correctness attestation",
+  "runtimes": {
+    "node": "22.22.2",
+    "npm": "10.9.7",
+    "bun": "1.4.4",
+    "opencode": "2.1.4",
+    "pi": "1.4.0"
+  },
+  "verification": {
+    "full": {
+      "command": "npm test",
+      "runs": 1,
+      "tests": 132,
+      "passed": 132,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    "affectedAdapter": {
+      "passed": 3,
+      "tests": 3,
+      "exit": 0
+    },
+    "callerCLI": {
+      "passed": 1,
+      "tests": 1,
+      "exit": 0
+    },
+    "sdkAndLauncher": {
+      "passed": 3,
+      "tests": 3,
+      "exit": 0
+    },
+    "readonlyAndTamper": {
+      "passed": 2,
+      "tests": 2,
+      "exit": 0
+    }
+  },
+  "failureHistory": [
+    {
+      "stage": "unsupported-kind-red",
+      "tests": 1,
+      "passed": 0,
+      "exit": 1
+    },
+    {
+      "stage": "device-config-read-EACCES",
+      "tests": 1,
+      "passed": 0,
+      "exit": 1,
+      "resolution": "Use readonly empty regular file at distinct config namespace paths"
+    },
+    {
+      "stage": "test-helper-shared-array",
+      "tests": 5,
+      "passed": 3,
+      "exit": 1,
+      "resolution": "Clone test fixture arrays; affected 3/3 exit0"
+    },
+    {
+      "stage": "unsupported-cli-red",
+      "tests": 1,
+      "passed": 0,
+      "exit": 1
+    }
+  ],
+  "comparison": [
+    {
+      "framework": "opencode",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "scripted_mock",
+      "actualModelRequests": 0,
+      "requestCounts": {
+        "attempted": 5,
+        "admitted": 5,
+        "dispatched": 5,
+        "terminalConfirmed": 5
+      },
+      "reservedOutputTokens": 2560,
+      "toolActions": [
+        "check",
+        "read",
+        "edit"
+      ],
+      "baseline": {
+        "npmExitCode": 1,
+        "npmClosed": true,
+        "oracleCode": "CHECK_VALUE_MISMATCH",
+        "oracleObserved": -1,
+        "expected": 5
+      },
+      "final": {
+        "kind": "node-npm-repo",
+        "npmExitCode": 0,
+        "npmClosed": true,
+        "oracleStatus": "passed",
+        "cases": [
+          {
+            "id": "positive",
+            "observed": 5,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "signed",
+            "observed": 3,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "zero",
+            "observed": -6,
+            "comparison": true,
+            "closed": true
+          }
+        ],
+        "manifestHash": "c19de4a8bd63aa5cf53d89ca503538292fec4bf63c7608524b1b8f5998fc5dee",
+        "definitionHash": "421fdc31ad16678276443e0f7265b18844e430344cc0674d6a815ae5952fa715",
+        "protocol": {
+          "kind": "node-npm-repo",
+          "version": 1,
+          "implementationHash": "bf0ff9af328c0ae72573740e83be456135b1a8ee7ed95a85336e1246dd721b83",
+          "jsonProtocol": {
+            "kind": "node-json-cli",
+            "version": 1,
+            "implementationHash": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+            "domain": "plain-json-safe-integers-depth8-nodes1024-bytes8192-no-negative-zero",
+            "duplicateKeys": "JSON.parse-last-value",
+            "comparison": "deep-strict-equal",
+            "workerCodeExecution": true
+          },
+          "npmObservation": "normal-exit-not-assertion-attestation",
+          "acceptance": "npm-normal-exit0-and-all-host-json-cases"
+        },
+        "runtime": {
+          "nodeHash": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+          "nodeBytes": 124679552,
+          "npm": {
+            "version": "10.9.7",
+            "hash": "78078a3bf550bcf8f0760f75f74dc5b77f8f4810c935765344df4c7eb6624867",
+            "files": 1964,
+            "bytesExcludingMaskedConfigs": 10899870,
+            "maskedConfigs": [
+              ".npmrc"
+            ]
+          },
+          "shellHash": "86d31f6fb799e91fa21bad341484564510ca287703a16e9e46c53338776f4f42",
+          "shellBytes": 129784
+        },
+        "protectedFiles": [
+          {
+            "path": "cli.mjs",
+            "hash": "1cfea7cd8d1f86a3e416de37409f8a105d0a1371396987c4786125cd0a28f2cf",
+            "bytes": 171
+          },
+          {
+            "path": "hook.mjs",
+            "hash": "0b0dcc4e15852d0ebef1f03b7ef209403e4106dda74882c5d208edbb94474df3",
+            "bytes": 135
+          },
+          {
+            "path": "package.json",
+            "hash": "52d95c7d3677656f77db2aa58bff95d064d5d0da584433470196ba8843e1c51a",
+            "bytes": 256
+          },
+          {
+            "path": "test/contract.test.mjs",
+            "hash": "0dc7264bf9f1dcfd4c42f839201f292cc14aa3d9f6673969b1d6f5ff9a56bb54",
+            "bytes": 928
+          }
+        ]
+      },
+      "acceptedArtifact": {
+        "path": "src/add.mjs",
+        "beforeHash": "33a5a81349f3940bb66bd78fa2a9fc507a4c2346d61e4bd6ad0a915e506dd53a",
+        "afterHash": "4a381860447226426a116b024081641b32f9b6c4f7c2c5d3cb86987e85c8ae33",
+        "content": "export const add = (a, b) => a + b;\n"
+      },
+      "sourceUnchanged": true,
+      "unitTestAssertions": "not_attested",
+      "usage": "unknown",
+      "liveCost": "unknown",
+      "wireHash": "e04744cefa457783046ff5ebe58554a2ccabd5928100d721d227ad41ca3e745e",
+      "wireBytes": 116150
+    },
+    {
+      "framework": "pi",
+      "model": "calcifer-synthetic-v1",
+      "provenance": "scripted_mock",
+      "actualModelRequests": 0,
+      "requestCounts": {
+        "attempted": 5,
+        "admitted": 5,
+        "dispatched": 5,
+        "terminalConfirmed": 5
+      },
+      "reservedOutputTokens": 2560,
+      "toolActions": [
+        "check",
+        "read",
+        "edit"
+      ],
+      "baseline": {
+        "npmExitCode": 1,
+        "npmClosed": true,
+        "oracleCode": "CHECK_VALUE_MISMATCH",
+        "oracleObserved": -1,
+        "expected": 5
+      },
+      "final": {
+        "kind": "node-npm-repo",
+        "npmExitCode": 0,
+        "npmClosed": true,
+        "oracleStatus": "passed",
+        "cases": [
+          {
+            "id": "positive",
+            "observed": 5,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "signed",
+            "observed": 3,
+            "comparison": true,
+            "closed": true
+          },
+          {
+            "id": "zero",
+            "observed": -6,
+            "comparison": true,
+            "closed": true
+          }
+        ],
+        "manifestHash": "c19de4a8bd63aa5cf53d89ca503538292fec4bf63c7608524b1b8f5998fc5dee",
+        "definitionHash": "421fdc31ad16678276443e0f7265b18844e430344cc0674d6a815ae5952fa715",
+        "protocol": {
+          "kind": "node-npm-repo",
+          "version": 1,
+          "implementationHash": "bf0ff9af328c0ae72573740e83be456135b1a8ee7ed95a85336e1246dd721b83",
+          "jsonProtocol": {
+            "kind": "node-json-cli",
+            "version": 1,
+            "implementationHash": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+            "domain": "plain-json-safe-integers-depth8-nodes1024-bytes8192-no-negative-zero",
+            "duplicateKeys": "JSON.parse-last-value",
+            "comparison": "deep-strict-equal",
+            "workerCodeExecution": true
+          },
+          "npmObservation": "normal-exit-not-assertion-attestation",
+          "acceptance": "npm-normal-exit0-and-all-host-json-cases"
+        },
+        "runtime": {
+          "nodeHash": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+          "nodeBytes": 124679552,
+          "npm": {
+            "version": "10.9.7",
+            "hash": "78078a3bf550bcf8f0760f75f74dc5b77f8f4810c935765344df4c7eb6624867",
+            "files": 1964,
+            "bytesExcludingMaskedConfigs": 10899870,
+            "maskedConfigs": [
+              ".npmrc"
+            ]
+          },
+          "shellHash": "86d31f6fb799e91fa21bad341484564510ca287703a16e9e46c53338776f4f42",
+          "shellBytes": 129784
+        },
+        "protectedFiles": [
+          {
+            "path": "cli.mjs",
+            "hash": "1cfea7cd8d1f86a3e416de37409f8a105d0a1371396987c4786125cd0a28f2cf",
+            "bytes": 171
+          },
+          {
+            "path": "hook.mjs",
+            "hash": "0b0dcc4e15852d0ebef1f03b7ef209403e4106dda74882c5d208edbb94474df3",
+            "bytes": 135
+          },
+          {
+            "path": "package.json",
+            "hash": "52d95c7d3677656f77db2aa58bff95d064d5d0da584433470196ba8843e1c51a",
+            "bytes": 256
+          },
+          {
+            "path": "test/contract.test.mjs",
+            "hash": "0dc7264bf9f1dcfd4c42f839201f292cc14aa3d9f6673969b1d6f5ff9a56bb54",
+            "bytes": 928
+          }
+        ]
+      },
+      "acceptedArtifact": {
+        "path": "src/add.mjs",
+        "beforeHash": "33a5a81349f3940bb66bd78fa2a9fc507a4c2346d61e4bd6ad0a915e506dd53a",
+        "afterHash": "4a381860447226426a116b024081641b32f9b6c4f7c2c5d3cb86987e85c8ae33",
+        "content": "export const add = (a, b) => a + b;\n"
+      },
+      "sourceUnchanged": true,
+      "unitTestAssertions": "not_attested",
+      "usage": "unknown",
+      "liveCost": "unknown",
+      "wireHash": "83ef2cbf8274e62ca5a7f97d9fa7db61a7dd7fe3e2339e7058926a76fc1f556e",
+      "wireBytes": 100516
+    }
+  ],
+  "sourceHashes": {
+    "fixtures/npm-repo-contract.json": "4e6030b4b51addb971f09de18319ddd59bab9994e80e78a90c7f6bf59b09958f",
+    "fixtures/npm-repo-demo/cli.mjs": "1cfea7cd8d1f86a3e416de37409f8a105d0a1371396987c4786125cd0a28f2cf",
+    "fixtures/npm-repo-demo/hook.mjs": "0b0dcc4e15852d0ebef1f03b7ef209403e4106dda74882c5d208edbb94474df3",
+    "fixtures/npm-repo-demo/package.json": "52d95c7d3677656f77db2aa58bff95d064d5d0da584433470196ba8843e1c51a",
+    "fixtures/npm-repo-demo/plan.json": "b2e97030bfcba997ae036ae0090add7d3653aae7e53cdcb352d2fe421ac4d687",
+    "fixtures/npm-repo-demo/src/add.mjs": "33a5a81349f3940bb66bd78fa2a9fc507a4c2346d61e4bd6ad0a915e506dd53a",
+    "fixtures/npm-repo-demo/test/contract.test.mjs": "0dc7264bf9f1dcfd4c42f839201f292cc14aa3d9f6673969b1d6f5ff9a56bb54",
+    "package-lock.json": "08da4435eee2ff40bc9f1f9dfc39548eaec6d47aeb7ad7d51edaa52ab77eedea",
+    "package.json": "e720ed5dda2f783bc93bea0a2d5996f9da6d7539cada800c4071a3ed80da2aec",
+    "src/collaboration-run-cli.mjs": "f9a1f52e567fda665b14fec19ba77e6ef79cab6bfe5659d5c805f530fb489c33",
+    "src/collaboration-runner.mjs": "2b626b512a12318ffc23d79bca03da54bb65ec20ee717018d5643bddcf9dca82",
+    "src/goal-child.mjs": "71702fa7f3274b2374dc4adc4efe462e724af33d295686d568706ab868f662a6",
+    "src/goal-cli.mjs": "9e90136f0bd83e642f129a36e14d481f3a65f993b965bd7c6e0a3db45a7bea40",
+    "src/goal-fixture.mjs": "feb4bc7b7b5d4614d426385725b131e3f30b3312ddc499e617fec6c0831087ff",
+    "src/goal-runner.mjs": "8001176af927df45cf6dd40f2a1a28c28b373cb331830942ef93c9b8bf733306",
+    "src/npm-repo-check.mjs": "bf0ff9af328c0ae72573740e83be456135b1a8ee7ed95a85336e1246dd721b83",
+    "test/npm-repo-check.test.mjs": "ba6d8cb0239dfe74e94c9c4a219f4659c13d8997566707e299cd02b9a2583c7e",
+    "test/npm-repo-cli.test.mjs": "b26fd9640858db0b03553b6348498ae76723f2bebb9897ec364f4d248e2d3d14",
+    "test/npm-repo-goal.test.mjs": "189d596f736398cd52e01b33a1caa4a8770d87925f0fd3e1bf23ea6a0a1aece2"
+  },
+  "pending": [
+    "General dependencies, installs, arbitrary scripts/workspaces/test-framework adaptation",
+    "Assertion provenance and hidden-test guarantees",
+    "CPU/RAM/PID quotas, seccomp and production hostile-repo safety",
+    "Live/service/training authorization and actual model quality/usage/cost"
+  ]
+}
