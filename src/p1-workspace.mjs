@@ -94,7 +94,10 @@ export function createP1Tools({root,config,limits,journal,check,signal,admitted=
           stopped();sideEffect=true;await writeDurable(join(root,args.path),args.content,true);result={path:args.path,beforeHash:null,hash:hash(args.content)};
         }
         if(action==='check'){stopped();sideEffect=true;const receipt=await check(args.checkId);confirmedCheck=receipt?.process?.closed===true;result=receipt?.kind==='node-project-command'?boundedP1CheckSummary(receipt,limits.maxOutputBytes):receipt;}
-        if(Buffer.byteLength(JSON.stringify(result))>limits.maxOutputBytes)throw new Error('TOOL_OUTPUT_ACK_UNKNOWN');
+        if(Buffer.byteLength(JSON.stringify(result))>limits.maxOutputBytes){
+          if(!sideEffect&&['read','search'].includes(action))fail('TOOL_OUTPUT_LIMIT');
+          throw new Error('TOOL_OUTPUT_ACK_UNKNOWN');
+        }
         acknowledging=true;await journal({type:'completed',data:{id,resultHash:digest(result)}});acknowledging=false;return result;
       }catch(error){
         if(intent&&error.known&&!acknowledging&&(!sideEffect||confirmedCheck)){try{await journal({type:'completed',data:{id,failed:true,code:error.message}});}catch(journalError){unknown=true;accepting=false;throw journalError;}}
