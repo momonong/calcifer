@@ -1,5 +1,13 @@
 # 更新紀錄
 
+## 0.0.6 — 2026-10-30
+
+- 新增node-npm-repo：固定零依賴多檔ESM snapshot、實際npm test觀察，加上同snapshot的獨立host JSON CLI oracle。npm0及全部cases皆通過才接受，TAP/exit不是assertion attestation。
+- 固定package/test/entry/protected identities、Node/npm整樹/shell/config/argv/protocol；每步durable intent/close/completion，readonly reopen重算語義／coverage／journal，UNKNOWN不重送。
+- 新增caller repo:check與既有readonly reopen，check-only無SDK/模型/編輯、只一次host final；兩官方SDK同fixture各5mock requests，基線npm1＋mismatch→edit→npm0＋三cases，來源保留。
+- M5唯一完整npm test132/132、實際exit0、fail/skip/cancel0；必要定向與預期RED、config device EACCES及測試helper污染失敗保留，probe不重跑。根版本0.0.6，無依賴變更。
+- 不支持install、任意scripts/依賴/框架、assertion provenance、production hostile-repo安全；無live/服務/UI/訓練。
+
 ## 0.0.5 — 2026-10-30
 
 - 保留 node-data，新增固定單 entry 的 node-json-cli：每 case 新隔離 child、stdin 僅當次 input、host 外部固定 expected，完整 close／exit 0／嚴格 JSON 域與完整值比較皆須成立。沒有通用 shell/npm/test 平台。

@@ -5,6 +5,7 @@ import { validateTaskPlan } from './task-plan.mjs';
 import { planAssignments } from './model-router.mjs';
 import { runCollaboration, reopenRun } from './collaboration-runner.mjs';
 import { createRunState, readRunState } from './run-state.mjs';
+import { bindNpmRepoDefinition, verifyNpmRepoDefinition, verifyNpmRepoSnapshot } from './npm-repo-check.mjs';
 import { bindJsonCliDefinition, verifyJsonCliDefinition } from './json-cli-check.mjs';
 import { GoalRequestGate, MOCK_POLICY, MOCK_PROFILE, MODEL_ID } from './goal-request-gate.mjs';
 import { installGoalBoundary, runSdkPhase } from './goal-sdk.mjs';
@@ -29,6 +30,7 @@ async function authority(goal, host, plannerProfileId) {
   const definitions = {};
   for (const id of host.allowedCheckIds) {
     const check = host.checks?.[id];
+    if (check?.kind === 'node-npm-repo') { definitions[id] = await bindNpmRepoDefinition(check, host, host.hostNodeBinary); continue; }
     if (check?.kind === 'node-json-cli') {
       definitions[id] = await bindJsonCliDefinition(check, { ...host, maxOutputBytes: host.limits?.maxOutputBytes }, host.hostNodeBinary);
       continue;
@@ -38,6 +40,7 @@ async function authority(goal, host, plannerProfileId) {
     definitions[id] = { ...check, scriptHash: script.hash };
   }
   const initial = await snapshotWorkspace(host.sourceDir, host.sourceFiles, { writablePaths: host.allowedPaths, limits: host.limits });
+  for (const definition of Object.values(definitions)) if (definition.kind === 'node-npm-repo') verifyNpmRepoSnapshot(initial.manifest, definition);
   const descriptor = { kind: 'goal_request', goal };
   const hostScope = { sourceDir: host.sourceDir, stateRoot: host.stateRoot, sourceFiles: host.sourceFiles,
     readPaths: host.readPaths, allowedPaths: host.allowedPaths, allowedCheckIds: host.allowedCheckIds, finalCheckIds: host.finalCheckIds,
@@ -90,7 +93,7 @@ export async function runGoal({ goal, host: originalHost, plannerProfileId, tran
         const prompt = JSON.stringify({ role: 'worker', goal, task: context.task,
           dependencyFacts: context.task.dependsOn.map(taskId => ({ taskId, status: 'host-accepted' })),
           hostFinalChecks: host.finalCheckIds, budget: { ...MOCK_POLICY, alreadyAdmitted: (await gate.state()).requests },
-          scope: { readPaths: host.readPaths, writePaths: context.task.writePaths, checkIds: context.task.checkIds }, acceptance: 'Host fixed checks only: node-data reads file contents; node-json-cli compares complete CLI JSON output for fixed host cases. General runtime tests remain pending.' });
+          scope: { readPaths: host.readPaths, writePaths: context.task.writePaths, checkIds: context.task.checkIds }, acceptance: 'Host fixed checks only: node-data reads file contents; node-json-cli compares complete CLI JSON output for fixed host cases. node-npm-repo observes fixed npm test plus same-snapshot host JSON cases; unit-test assertion execution is not attested. General project/test-framework support remains pending.' });
         try { await phaseRun({ kind: 'worker', taskId: context.task.id, framework: profile.framework, profileId: profile.id, model: MODEL_ID }, prompt,
           async input => {
             const result = await context.tools.dispatch(input);
@@ -123,7 +126,7 @@ export async function runGoal({ goal, host: originalHost, plannerProfileId, tran
   });
   const acceptanceKinds = [...new Set(host.finalCheckIds.map(id => host.checks[id].kind))];
   const report = { schemaVersion: 1, kind: 'goal', runID: state.metadata.runID, runDir: state.runDir, status, ...(code ? { code } : {}), provenance,
-    acceptanceKind: acceptanceKinds.length === 1 ? acceptanceKinds[0] : 'mixed', runtimeCorrectness: acceptanceKinds.includes('node-json-cli') ? 'fixed_json_cli_cases_only' : 'pending_implementation_verification', generalTestFrameworks: 'pending_implementation_verification', integrationAccepted: status === 'completed' && inner?.integrationAccepted === true,
+    acceptanceKind: acceptanceKinds.length === 1 ? acceptanceKinds[0] : 'mixed', runtimeCorrectness: acceptanceKinds.includes('node-npm-repo') ? 'fixed_npm_command_and_json_cli_cases_only' : acceptanceKinds.includes('node-json-cli') ? 'fixed_json_cli_cases_only' : 'pending_implementation_verification', unitTestAssertions: 'not_attested', generalTestFrameworks: 'pending_implementation_verification', integrationAccepted: status === 'completed' && inner?.integrationAccepted === true,
     goal, plan, planHash: plan ? digest(plan) : undefined, authorityHash: authorized.authorityHash, inner,
     phases: phaseSummary,
     syntheticModelRequests: gate.wire.length, actualModelRequests: 0, requestAttempts: gate.attempted,
@@ -145,6 +148,7 @@ export async function reopenGoal(options) {
   const source = await snapshotWorkspace(metadata.hostScope.sourceDir, metadata.hostScope.sourceFiles, { limits: metadata.hostScope.limits });
   if (source.manifest.hash !== metadata.initialManifest.hash) fail('SOURCE_CHANGED');
   for (const definition of Object.values(metadata.hostScope.definitions)) {
+    if (definition.kind === 'node-npm-repo') { await verifyNpmRepoDefinition(definition); continue; }
     if (definition.kind === 'node-json-cli') { await verifyJsonCliDefinition(definition); continue; }
     if (definition.kind !== 'node-data' || (await readText(dirname(definition.scriptPath), basename(definition.scriptPath))).hash !== definition.scriptHash) fail('CHECK_DEFINITION_CHANGED');
   }

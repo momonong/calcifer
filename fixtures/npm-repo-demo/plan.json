@@ -1,0 +1,1 @@
+{"schemaVersion":1,"goal":"Correct the synthetic multi-file npm repository sum","tasks":[{"id":"fix","instruction":"Observe npm and host oracle then read and fix add","dependsOn":[],"requiredCapabilities":["edit","verify"],"writePaths":["src/add.mjs"],"checkIds":["final"]}]}

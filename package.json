@@ -1,6 +1,6 @@
 {
   "name": "calcifer-harness-spike",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,7 +14,8 @@
     "collaboration:plan": "node src/collaboration-cli.mjs",
     "collaboration:run": "node src/collaboration-run-cli.mjs",
     "goal:run": "node src/goal-cli.mjs",
-    "test:goal": "node --test --test-concurrency=1 test/goal-request-gate.test.mjs test/goal-runner.test.mjs"
+    "test:goal": "node --test --test-concurrency=1 test/goal-request-gate.test.mjs test/goal-runner.test.mjs",
+    "repo:check": "node src/collaboration-run-cli.mjs repo-check"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "1.4.0",
