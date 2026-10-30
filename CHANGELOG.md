@@ -1,5 +1,10 @@
 # 更新紀錄
 
+## Unreleased — P1 read result limit correction
+
+- 純 read／search 的完整 JSON 結果超過輸出額度時，改記已知 `TOOL_OUTPUT_LIMIT` 並完成失敗 intent，避免誤留 UNKNOWN 鎖住後續工作；保留原輸出上限、寫入與真實 journal ack 遺失的 UNKNOWN 保護。
+- 回歸涵蓋 3000-byte 合法讀取、JSON escaping 膨脹、search 最小 envelope、失敗收據遺失，以及實際 HTTP mock／SDK 續輪與同 authority 下一工作；舊 P1-A 驗證摘要保留原樣。
+
 ## Unreleased — P1-A mock workflow
 
 - 新增外部 repo／goal CLI、scoped read／search／expected-hash edit／exclusive create 工具、預登錄隔離 Node 檢查與受保護 host acceptance。

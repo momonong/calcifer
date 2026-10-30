@@ -40,3 +40,47 @@ test('noisy registered check returns bounded known failure summary and completes
 test('raw command bytes survive a multibyte output-cap split and verify without lossy reencoding',async()=>{const root=await mkdtemp('/tmp/calcifer-p1-raw-');try{await writeFile(join(root,'emit.mjs'),"process.stdout.write('中中');\n");const runtime=await bindP1Runtime(process.execPath),r=await runP1Check({snapshotDir:root,manifest:{hash:'d'.repeat(64)},definition:{argv:['emit.mjs'],timeoutMs:1000,definitionHash:'e'.repeat(64)},runtime,maxOutputBytes:5,stage:'worker',checkId:'test'});assert.equal(r.stdoutBase64,'5Lit5Lg=');assert.equal(r.stdoutHash,hash(Buffer.from([0xe4,0xb8,0xad,0xe4,0xb8])));const {verifyP1CheckOutput}=await import('../src/p1-check.mjs');assert.equal(verifyP1CheckOutput(r),true);assert.throws(()=>verifyP1CheckOutput({...r,stdoutBase64:'AA=='}),/CHECK_OUTPUT_MISMATCH/);}finally{await rm(root,{recursive:true,force:true});}});
 test('T2 host scope protects the same regression against worker edits',async()=>{const f=await freshP1('t2');try{assert.equal(f.config.writePaths.includes('test/contract.test.mjs'),false);const config=JSON.parse(await readFile(f.configPath,'utf8')),before=await readFile(join(f.repo,'test/contract.test.mjs'),'utf8'),tools=createP1Tools({root:f.repo,config,limits,journal:async()=>{}});await assert.rejects(tools.dispatch({action:'edit',args:{path:'test/contract.test.mjs',expectedHash:hash(before),content:'weakened'}}),/TOOL_PATH_NOT_ALLOWED/);assert.equal(await readFile(join(f.repo,'test/contract.test.mjs'),'utf8'),before);}finally{await rm(f.base,{recursive:true,force:true});}});
 test('read-only reopening of abrupt pre-snapshot/pre-report death exposes persistent UNKNOWN',async()=>{const f=await workspace();let state;try{const plan={kind:'p1-goal',goal:'interrupted'},meta={kind:'p1',stateRoot:f.stateRoot,repo:f.repo,config:f.config,plan,planHash:hash(JSON.stringify(plan)),authorityHash:f.b.authorityHash,initialManifest:f.b.initial.manifest,harness:'pi',profile:'mock-loopback',limits,provenance:{kind:'mock'}};state=await createRunState({stateRoot:f.stateRoot,sourceDir:f.repo,metadata:meta});const id='00000000-0000-4000-8000-000000000000';await state.append({type:'intent',data:{id,kind:'sdk'}});const before=await readFile(join(state.runDir,'ledger.jsonl'),'utf8'),{reopenP1}=await import('../src/p1-evidence.mjs');const r=await reopenP1({stateRoot:f.stateRoot,runID:state.metadata.runID});assert.equal(r.status,'unknown');assert.equal(r.reopenedWithoutSDK,true);assert.equal(r.integrationAccepted,false);assert.deepEqual(r.artifacts,[]);assert.equal(r.initialSnapshot.status,'absent');assert.equal(r.sourcePreserved,null);assert.equal(await readFile(join(state.runDir,'ledger.jsonl'),'utf8'),before);await materializeSnapshot(join(state.runDir,'initial'),f.b.initial);const existing=await reopenP1({stateRoot:f.stateRoot,runID:state.metadata.runID});assert.equal(existing.initialSnapshot.status,'verified');await writeFile(join(state.runDir,'initial','README.md'),'tampered');await assert.rejects(reopenP1({stateRoot:f.stateRoot,runID:state.metadata.runID}),/MISMATCH/);}finally{await state?.release(false);await rm(f.base,{recursive:true,force:true});}});
+
+for (const [label,content] of [['ASCII 3000 bytes','x'.repeat(3000)],['JSON escaping overhead','"'.repeat(1000)]]) test(`oversized read ${label} is a durable known failure and leaves safe tools/new jobs available`, async()=>{
+  const f=await workspace();let state;
+  try {
+    await writeFile(join(f.root,'UNRELATED.md'),content);
+    const small=boundedLimits({maxOutputBytes:2048}),plan={goal:'read-output-limit'};
+    state=await createRunState({stateRoot:f.stateRoot,sourceDir:f.repo,metadata:{stateRoot:f.stateRoot,plan,planHash:hash(JSON.stringify(plan)),provenance:{kind:'mock'}}});
+    const tools=createP1Tools({root:f.root,config:f.config,limits:small,journal:event=>state.append(event)});
+    await assert.rejects(tools.dispatch({action:'read',args:{path:'UNRELATED.md'}}),error=>{
+      assert.equal(error.message,'TOOL_OUTPUT_LIMIT');assert.equal(error.known,true);
+      assert.ok(Buffer.byteLength(error.message)<=small.maxOutputBytes);return true;
+    });
+    const safe=await tools.dispatch({action:'read',args:{path:'README.md'}});assert.match(safe.content,/Taskboard CLI/);await tools.drain();
+    const saved=await readRunState({stateRoot:f.stateRoot,runID:state.metadata.runID});assert.deepEqual(saved.unknown,[]);
+    assert.equal(saved.events.filter(e=>e.type==='intent').length,2);assert.equal(saved.events.filter(e=>e.type==='completed').length,2);
+    assert.ok(saved.events.some(e=>e.type==='completed'&&e.data.failed===true&&e.data.code==='TOOL_OUTPUT_LIMIT'));
+    assert.equal(await readFile(join(f.root,'UNRELATED.md'),'utf8'),content);
+    await state.finish({runID:state.metadata.runID,status:'failed'});await state.release(true);state=null;
+    const next=await createRunState({stateRoot:f.stateRoot,sourceDir:f.repo,metadata:{stateRoot:f.stateRoot,plan,planHash:hash(JSON.stringify(plan)),provenance:{kind:'mock'}}});
+    await next.finish({runID:next.metadata.runID,status:'failed'});await next.release(true);
+  } finally {await state?.release(false);await rm(f.base,{recursive:true,force:true});}
+});
+
+test('search below its fixed result envelope is a known size failure without sealing admission',async()=>{
+  const f=await workspace(),events=[],tiny=boundedLimits({maxOutputBytes:24});
+  try {
+    const tools=createP1Tools({root:f.root,config:f.config,limits:tiny,journal:async event=>events.push(event)});
+    for(let index=0;index<2;index++)await assert.rejects(tools.dispatch({action:'search',args:{query:'not-present-anywhere'}}),error=>error.known===true&&error.message==='TOOL_OUTPUT_LIMIT'&&Buffer.byteLength(error.message)<=tiny.maxOutputBytes);
+    await tools.drain();assert.equal(events.filter(e=>e.type==='intent').length,2);assert.equal(events.filter(e=>e.type==='completed').length,2);
+  }finally{await rm(f.base,{recursive:true,force:true});}
+});
+
+test('oversized-read known-failure acknowledgement loss still seals durable UNKNOWN',async()=>{
+  const f=await workspace();let state;
+  try {
+    await writeFile(join(f.root,'UNRELATED.md'),'x'.repeat(3000));const plan={goal:'read-limit-ack-loss'};
+    state=await createRunState({stateRoot:f.stateRoot,sourceDir:f.repo,metadata:{stateRoot:f.stateRoot,plan,planHash:hash(JSON.stringify(plan)),provenance:{kind:'mock'}}});
+    const tools=createP1Tools({root:f.root,config:f.config,limits:boundedLimits({maxOutputBytes:2048}),journal:async event=>{if(event.type==='completed')throw new Error('ACK_LOST');await state.append(event);}});
+    await assert.rejects(tools.dispatch({action:'read',args:{path:'UNRELATED.md'}}),/ACK_LOST/);
+    await assert.rejects(tools.dispatch({action:'read',args:{path:'README.md'}}),/TOOL_OUTCOME_UNKNOWN/);
+    const saved=await readRunState({stateRoot:f.stateRoot,runID:state.metadata.runID});assert.equal(saved.status,'unknown');assert.equal(saved.unknown.length,1);
+    await state.release(false);state=null;await assert.rejects(createRunState({stateRoot:f.stateRoot,sourceDir:f.repo,metadata:{}}),/LOCKED|UNKNOWN/);
+  }finally{await state?.release(false);await rm(f.base,{recursive:true,force:true});}
+});
