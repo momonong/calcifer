@@ -1,5 +1,12 @@
 # Calcifer（卡西法）
 
+> **目前停止點（2026-10-30）：P1-A 已完成並合併，後續暫停。**
+> OpenCode 為主選、Pi 為對照；P1-A 已用短暫 **loopback HTTP mock** 驗證官方 SDK 與八模組，真實模型請求 0。最新程式基線為 PR #9 合併 `32a6321`，完整驗證 163/163、exit 0。
+> **P1-B 包含離線接線都等待使用者明確確認模型、資源與實測窗口後才接續；不自動 resume，不啟動 live／UI／服務。**
+> 接續請先讀 [P1-A 停止點與 P1-B 待確認清單](docs/p1a-checkpoint-2026-10-30.md)。根 package 仍為 0.0.7，未發新版。
+
+## 0.0.7 底座與既有驗證（保留歷史說明）
+
 目前版本：**0.0.7**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M5 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
