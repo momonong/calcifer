@@ -10,7 +10,9 @@ export const MOCK_PROFILE = Object.freeze({ model: MODEL_ID, context: 32768, max
 const snapshot = { id: MODEL_ID, revision: 'synthetic-only', backend: 'vllm', max_model_len: 32768,
   capabilities: { text: true, stream: true, tools: true, thinking: false, cancellation: 'drain_to_terminal', unsupported_parameters: [] } };
 export class GoalRequestGate {
-  constructor({ state, transport, signal, now = Date.now }) {
+  constructor({ state, transport, signal, now = Date.now, endpoint = 'https://calcifer.invalid/v1/chat/completions' }) {
+    if (endpoint !== 'https://calcifer.invalid/v1/chat/completions' && !/^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}\/v1\/chat\/completions$/.test(endpoint)) fail('MOCK_ENDPOINT_REQUIRED');
+    this.endpoint = endpoint;
     if (typeof transport !== 'function' || digest(state.metadata.policy) !== digest(MOCK_POLICY)) fail('MOCK_POLICY_REQUIRED');
     this.hostState = state; this.transport = transport; this.signal = signal; this.now = now;
     this.phases = new Map(); this.wire = []; this.failures = []; this.attempted = 0; this.busy = false; this.unknown = false; this.pending = new Set();
@@ -37,7 +39,7 @@ export class GoalRequestGate {
     this.attempted++;
     const phase = this.phases.get(request.headers.get('x-calcifer-phase'));
     if (this.unknown) fail('MODEL_OUTCOME_UNKNOWN');
-    if (request.url !== 'https://calcifer.invalid/v1/chat/completions' || request.method !== 'POST') fail('MOCK_ENDPOINT_REQUIRED');
+    if (request.url !== this.endpoint || request.method !== 'POST') fail('MOCK_ENDPOINT_REQUIRED');
     if (!phase) fail('UNKNOWN_PHASE');
     if (!phase.open) fail('PHASE_CLOSED');
     if (this.busy) fail('MODEL_CONCURRENCY_LIMIT');

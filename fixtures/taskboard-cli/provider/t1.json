@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "responses": [
+    {
+      "calls": [
+        {
+          "action": "read",
+          "args": {
+            "path": "src/taskboard.mjs"
+          }
+        },
+        {
+          "action": "search",
+          "args": {
+            "query": "status"
+          }
+        },
+        {
+          "action": "check",
+          "args": {
+            "checkId": "test"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "edit",
+          "args": {
+            "path": "src/taskboard.mjs",
+            "expectedHash": "22b296a3d463b6bc966fdb94b92f290b5de66016654b39eda04ed6539a5d9538",
+            "content": "import { matchesStatus } from './status.mjs';\nexport function listTasks(tasks, {status, before} = {}) {\n  return tasks.filter(task => matchesStatus(task, status) && (!before || task.due < before));\n}\nexport function stats(tasks) {\n  return {total: tasks.length, done: tasks.filter(task => task.status === 'done').length};\n}\n"
+          }
+        },
+        {
+          "action": "create",
+          "args": {
+            "path": "src/status.mjs",
+            "content": "export const matchesStatus = (task, status) => !status || task.status === status;\n"
+          }
+        },
+        {
+          "action": "edit",
+          "args": {
+            "path": "README.md",
+            "expectedHash": "58ee00bf9c7d3ba678896884dbd4f54e53d219008cb772d1db9806837f88745b",
+            "content": "# Taskboard CLI\n\nRun `node src/cli.mjs list` or `node src/cli.mjs stats`.\nUse `list --status done` to list completed tasks.\n"
+          }
+        },
+        {
+          "action": "edit",
+          "args": {
+            "path": "test/contract.test.mjs",
+            "expectedHash": "0c48a8acf5065efddd46ca6dd4a30d6f59b154f57a6be72be2a3ba1e74cf57e8",
+            "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { listTasks, stats } from '../src/taskboard.mjs';\nconst tasks = [{id:'a',status:'todo',due:'2026-10-30'},{id:'b',status:'done',due:'2026-10-31'},{id:'c',status:'done'}];\ntest('list and statistics preserve all tasks', () => {\n  assert.equal(listTasks(tasks).length, 3);\n  assert.deepEqual(stats(tasks), {total:3,done:2});\n});\ntest('done status includes only completed tasks', () => assert.deepEqual(listTasks(tasks,{status:'done'}).map(t=>t.id), ['b','c']));\n"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "check",
+          "args": {
+            "checkId": "test"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Implemented status filtering, added a module and regression coverage; project checks passed."
+    }
+  ]
+}

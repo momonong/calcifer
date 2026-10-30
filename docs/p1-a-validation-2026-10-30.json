@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P1-A",
+  "date": "2026-10-30",
+  "baseVersion": "0.0.7",
+  "baseCommit": "ee57d711760b0abf001007a2a479759ea26a15c1",
+  "sourceStatus": "pre-commit-validation-snapshot",
+  "scope": "Single-worker external goal/repo workflow using official SDKs, exact loopback HTTP mock, scoped tools, protected host acceptance, persistent stop/UNKNOWN, read-only reopen and verified new-file patch export. Mock mechanism acceptance only.",
+  "runtime": {
+    "platform": "Linux x86_64",
+    "node": "22.22.2",
+    "bun": "1.4.4",
+    "git": "2.43.0",
+    "sdks": {
+      "opencode": "2.1.4",
+      "piAgent": "1.4.0",
+      "piAI": "1.4.0"
+    }
+  },
+  "eightModules": [
+    {
+      "module": "goal-entry",
+      "accepted": true,
+      "evidence": "External arbitrary goal/goal-file, repo/config/harness/profile CLI; no task-ID answer selection"
+    },
+    {
+      "module": "repo-context",
+      "accepted": true,
+      "evidence": "Host scope, AGENTS context, complete source manifest, links/extra paths rejected, source preservation"
+    },
+    {
+      "module": "file-command-tools",
+      "accepted": true,
+      "evidence": "read/search/expected-hash edit/exclusive create/registered Node test; isolated bounded process-group closure"
+    },
+    {
+      "module": "provider-wiring",
+      "accepted": true,
+      "evidence": "Both official SDKs actually exchange exact-identity HTTP with ephemeral loopback mock behind durable gate"
+    },
+    {
+      "module": "worker-completion",
+      "accepted": true,
+      "evidence": "Official SDK worker loops; host final acceptance over same final manifest; SDK success/public-test weakening cannot accept"
+    },
+    {
+      "module": "permissions-state",
+      "accepted": true,
+      "evidence": "Immutable host scope, denied paths/commands, queued cancel/seal, persistent UNKNOWN/no replay, readonly incomplete reopen"
+    },
+    {
+      "module": "verification-observability",
+      "accepted": true,
+      "evidence": "Manifest/definition/runtime-bound receipts, T2 identical regression red to green, exact raw output bytes, process-close/native/wire metrics"
+    },
+    {
+      "module": "delivery",
+      "accepted": true,
+      "evidence": "Verified human-readable summary, artifacts/new files, standard patch, readonly reopen/export and tamper refusal"
+    }
+  ],
+  "verification": {
+    "targeted": {
+      "command": "node --test --test-concurrency=1 test/p1-workflow.test.mjs test/p1-boundaries.test.mjs",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "exit": 0,
+      "logHash": "80b7eb10ba74d35b3d0b2788c7214d2a7d120a5cedf213d46549bec1bdfdf797"
+    },
+    "independentReview": {
+      "actionableFindings": 3,
+      "alreadyQueuedCorrections": 3,
+      "addressed": 6,
+      "scopedRereviewNewBlockers": 0,
+      "fullReviewHash": "f842422ad2575e85a1437a3b774ace2dff013f0dd0587b3c78a97adfef4447ae",
+      "scopedReviewHash": "b6ec70b032dfb123d11849954cf095cefc8b9135b44bed177d0a9b51471b653c"
+    },
+    "full": {
+      "command": "npm test",
+      "runs": 1,
+      "tests": 158,
+      "passed": 158,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "exit": 0,
+      "elapsedSeconds": 63.064,
+      "logHash": "a97279535ba0115d93e5c1e567e6a406e6781db10f1d20ede46ed4063cda5227"
+    },
+    "retainedExamples": [
+      {
+        "framework": "opencode",
+        "task": "T1-feature",
+        "status": "completed",
+        "provenance": "scripted-local-HTTP-mock",
+        "officialSdkLoop": true,
+        "requests": 4,
+        "httpRequests": 4,
+        "httpClosed": true,
+        "exactLoopbackIdentity": true,
+        "sourceUnchanged": true,
+        "readonlyReopenExportStateUnchanged": true,
+        "sourceTreeHash": "99a53ffd025cb4e6931b66c1e02f6d35efe4c9a0d77855c64994ed013216842b",
+        "stateTreeHash": "7ef0e1fa91df1c9508bb7d42d99bfd2e99cb676396e4692b740e0c5593827e28",
+        "initialManifestHash": "c69bb4c9b2a3ff5cc08da45ea38a31a999f952e82b2fe80bba3a7bf988e392ed",
+        "finalManifestHash": "a553ef0563164c0b1146ac6c916902ec4d7e3060e2f30559530f0295c4ffde1a",
+        "reportHash": "4b6c908ac3d0d9915c57670a704f5c5bc9ee006693967780e4142bb85149b585",
+        "checks": [
+          {
+            "stage": "worker",
+            "checkId": "test",
+            "status": "passed",
+            "code": "CHECK_PASSED",
+            "manifestHash": "c69bb4c9b2a3ff5cc08da45ea38a31a999f952e82b2fe80bba3a7bf988e392ed",
+            "definitionHash": "5b93085e72bd3f240117548d3368032209d634129543a6027bfbadf0988e8c34"
+          },
+          {
+            "stage": "worker",
+            "checkId": "test",
+            "status": "passed",
+            "code": "CHECK_PASSED",
+            "manifestHash": "a553ef0563164c0b1146ac6c916902ec4d7e3060e2f30559530f0295c4ffde1a",
+            "definitionHash": "5b93085e72bd3f240117548d3368032209d634129543a6027bfbadf0988e8c34"
+          },
+          {
+            "stage": "final-acceptance",
+            "checkId": "host-acceptance",
+            "status": "passed",
+            "code": "CHECK_PASSED",
+            "manifestHash": "a553ef0563164c0b1146ac6c916902ec4d7e3060e2f30559530f0295c4ffde1a",
+            "definitionHash": "bae743d607e6389f332e0eb4ef010cef7f2ee2817134fdc1b7f361717c008aee"
+          }
+        ],
+        "regressionProtected": null,
+        "patch": {
+          "hash": "46194d50b7de9df218b99d7d33e79355ce34a56fc5a78567d0c88a60280199f0",
+          "bytes": 1720,
+          "changedFiles": 4,
+          "newFiles": [
+            "src/status.mjs"
+          ],
+          "applyCheckExit": 0
+        },
+        "reopenInferenceRequests": 0,
+        "exportInferenceRequests": 0
+      },
+      {
+        "framework": "pi",
+        "task": "T2-boundary-regression",
+        "status": "completed",
+        "provenance": "scripted-local-HTTP-mock",
+        "officialSdkLoop": true,
+        "requests": 4,
+        "httpRequests": 4,
+        "httpClosed": true,
+        "exactLoopbackIdentity": true,
+        "sourceUnchanged": true,
+        "readonlyReopenExportStateUnchanged": true,
+        "sourceTreeHash": "2e6f50c017daabfd0c01b95b2de184762ce1e439895307ddaace823e2eb11045",
+        "stateTreeHash": "c6bf538ac145ec84c321e112f0e3fc5bb743ecf54d8161b48f18abe18010f048",
+        "initialManifestHash": "65605fc53ac5af1c6a5692b6ff8b7a52a2fc8215b5f22ca00e264c75590d45e1",
+        "finalManifestHash": "d876fe1e48e33792eac29616020d096e78f44e5d3cd7f963b0254a7b760db725",
+        "reportHash": "551ac23db3dcd5c286621b8d146f9745a08d52c14ea3471f620747d0a2b82641",
+        "checks": [
+          {
+            "stage": "worker",
+            "checkId": "test",
+            "status": "failed",
+            "code": "CHECK_NONZERO_EXIT",
+            "manifestHash": "65605fc53ac5af1c6a5692b6ff8b7a52a2fc8215b5f22ca00e264c75590d45e1",
+            "definitionHash": "5b93085e72bd3f240117548d3368032209d634129543a6027bfbadf0988e8c34"
+          },
+          {
+            "stage": "worker",
+            "checkId": "test",
+            "status": "passed",
+            "code": "CHECK_PASSED",
+            "manifestHash": "d876fe1e48e33792eac29616020d096e78f44e5d3cd7f963b0254a7b760db725",
+            "definitionHash": "5b93085e72bd3f240117548d3368032209d634129543a6027bfbadf0988e8c34"
+          },
+          {
+            "stage": "final-acceptance",
+            "checkId": "host-acceptance",
+            "status": "passed",
+            "code": "CHECK_PASSED",
+            "manifestHash": "d876fe1e48e33792eac29616020d096e78f44e5d3cd7f963b0254a7b760db725",
+            "definitionHash": "a2f9510013a093876b0d01146f6a8fe8580ed8f23b0502ba7c97d9cea8a94ad8"
+          }
+        ],
+        "regressionProtected": true,
+        "patch": {
+          "hash": "0ef8d116f5272d89c62ee3e4c2e8722d45408b3f1773706b783d4f1688be793d",
+          "bytes": 624,
+          "changedFiles": 1,
+          "newFiles": [],
+          "applyCheckExit": 0
+        },
+        "reopenInferenceRequests": 0,
+        "exportInferenceRequests": 0
+      }
+    ]
+  },
+  "failureHistory": [
+    {
+      "stage": "initial-P1-entry-red",
+      "tests": 8,
+      "passed": 0,
+      "failed": 7,
+      "cancelled": 1,
+      "exit": 1,
+      "note": "P1 CLI absent; cancellation helper observed child already exited"
+    },
+    {
+      "stage": "review-fix-regressions-red",
+      "tests": 6,
+      "passed": 0,
+      "failed": 6,
+      "exit": 1
+    },
+    {
+      "stage": "review-fix-regressions-green",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "exit": 0
+    }
+  ],
+  "sourceHashes": {
+    "fixtures/taskboard-cli/prepare.mjs": "0c164a4e4739416ea229ab71bc33892e6766ea598cebe7f63decad98083ced09",
+    "fixtures/taskboard-cli/provider/budget.json": "55308be758f5abb0ac2a2d8ac9ef64cf416b436af12dde4555151a58aacb5bf2",
+    "fixtures/taskboard-cli/provider/cancel.json": "a4331337b50d9b3fccdbd2c1f77c9f3371129297b9827fafa2c4d1a62b9e653c",
+    "fixtures/taskboard-cli/provider/deny.json": "931af1fb3094d589bf4394d2e0eadf36d83c3e74ecaec8f250dbba2837076d12",
+    "fixtures/taskboard-cli/provider/false-success.json": "45b5d794ab435ae3f303d921b7d047fb594e57649e264719e8a61e63985fc172",
+    "fixtures/taskboard-cli/provider/http-error.json": "62c64b8cdaac802828dd1184d372fdd9ac3daa60164bb924a4093b35a4b0aed3",
+    "fixtures/taskboard-cli/provider/partial.json": "0f76b35fddaabe150f375da5db5a52714b6696a179c4924affafca4afaa7d8ca",
+    "fixtures/taskboard-cli/provider/t1.json": "09ba0a6105aaec10a8cbf0c40c6d1bf26f367c0a79f30ed1501f60ee5904732e",
+    "fixtures/taskboard-cli/provider/t2.json": "a9adc59d5f4edd910c6adcfbd1b8390f3a31d940f1dda0630008e570cfb1ae1e",
+    "fixtures/taskboard-cli/t1-acceptance.mjs": "62c0f3acd1bcdcfd8bb6909853e5929cfccdb283670931739ea9bd4e3977b35f",
+    "fixtures/taskboard-cli/t1/AGENTS.md": "2f823209d98f2ccc8f4e70baa698a173ab3bcb81ad3e2555e3df839544987cf1",
+    "fixtures/taskboard-cli/t1/README.md": "58ee00bf9c7d3ba678896884dbd4f54e53d219008cb772d1db9806837f88745b",
+    "fixtures/taskboard-cli/t1/UNRELATED.md": "6d2bab9e86924f32b2031117e0c29a6eb1601b6df8b9e08a2ce56a1050a4b153",
+    "fixtures/taskboard-cli/t1/data/tasks.json": "8aae67bcb5a0a675cdc5c99d9c54e882a336d31dfd1c4c5c2debd5f6b8711f81",
+    "fixtures/taskboard-cli/t1/package.json": "c92ac335c129c2218779080c145e3b5edc841523d5ad05aa377982fd020313f6",
+    "fixtures/taskboard-cli/t1/src/cli.mjs": "017138e4bbe4524ab35a8e28f6ce0918981815a80f8f70e7876ea293d915b01e",
+    "fixtures/taskboard-cli/t1/src/taskboard.mjs": "22b296a3d463b6bc966fdb94b92f290b5de66016654b39eda04ed6539a5d9538",
+    "fixtures/taskboard-cli/t1/test/contract.test.mjs": "0c48a8acf5065efddd46ca6dd4a30d6f59b154f57a6be72be2a3ba1e74cf57e8",
+    "fixtures/taskboard-cli/t2-acceptance.mjs": "9a36379dc6bdf805bc6756200bde219cbed3e9692a636364ca4ab3403924ec61",
+    "fixtures/taskboard-cli/t2/AGENTS.md": "2f823209d98f2ccc8f4e70baa698a173ab3bcb81ad3e2555e3df839544987cf1",
+    "fixtures/taskboard-cli/t2/README.md": "58ee00bf9c7d3ba678896884dbd4f54e53d219008cb772d1db9806837f88745b",
+    "fixtures/taskboard-cli/t2/UNRELATED.md": "6d2bab9e86924f32b2031117e0c29a6eb1601b6df8b9e08a2ce56a1050a4b153",
+    "fixtures/taskboard-cli/t2/data/tasks.json": "8aae67bcb5a0a675cdc5c99d9c54e882a336d31dfd1c4c5c2debd5f6b8711f81",
+    "fixtures/taskboard-cli/t2/package.json": "c92ac335c129c2218779080c145e3b5edc841523d5ad05aa377982fd020313f6",
+    "fixtures/taskboard-cli/t2/src/cli.mjs": "017138e4bbe4524ab35a8e28f6ce0918981815a80f8f70e7876ea293d915b01e",
+    "fixtures/taskboard-cli/t2/src/taskboard.mjs": "ee0322d5624b14ec5cd1a1bdf5fa5bb8df63aded0de45254cd435169837f8d70",
+    "fixtures/taskboard-cli/t2/test/contract.test.mjs": "34eb790386b8bbe35d94c7f9a67107326ea1ea7f0f383d79c19cd77f46da88d6",
+    "package.json": "c2af0bddfea01c3a88a0ed60df0a4f45801a6753eee0a4c2316e24f82d06bd91",
+    "src/artifact-diff.mjs": "6d1d242dde87a8ecdbfe8bb16f2557ac8a84a953738ab62212142b83ddd36c3f",
+    "src/goal-request-gate.mjs": "52b2bc3fc319c2022d8244dc977e9ff920a2feeb6d14c1a81235154d9a08965a",
+    "src/goal-sdk.mjs": "8491646caa9d82e41de06fd94b96c10c7021486eeb3037f86a4b67865556f476",
+    "src/p1-check.mjs": "8e739572ac105ea68e7c20d95e131a3d7c26f42c9126fb47d645c4a8a337e809",
+    "src/p1-child.mjs": "cb954e0368848a0f0062188f0b75253f7b5d49369654445ae970e03194d9bd58",
+    "src/p1-cli.mjs": "ca6df3d4f89c2a86133b6b55c386721bea4c6c60779a30a30df4a323070215c6",
+    "src/p1-evidence.mjs": "7b974edba6e102fd262997cd09afa92bca41b52358fdab1a692c3923853b2516",
+    "src/p1-mock.mjs": "ec93dbd716a1144e86b118174982b28b8acd274bb1d3d7693993bc3b0609509b",
+    "src/p1-runner.mjs": "d7c3ef01897308a624cab728fc39573f87e0befe974795b23bbe4aa280e31ff1",
+    "src/p1-workspace.mjs": "59c30b2efd86af50f2c1a8c88695dcad2549cd45af1b2d678d1fca92eec2a076",
+    "test/helpers/p1-fixture.mjs": "37690168f6a4b952dcce2179033160d6abfcd1f1a88be403e6379ad3342655a5",
+    "test/p1-boundaries.test.mjs": "34214ff2cee0194244bc715679706a86b59fa6ec769998e4bb62cbe94b457131",
+    "test/p1-workflow.test.mjs": "3c8d5e8a280441135c86ec2e8e3bd10aeb64e29eb45d00061a54f1f6f8c354ec",
+    "package-lock.json": "6b37db4a570555139cedb43a43a92b43405b8f8bc09d1117aaa570db4e6e47f6"
+  },
+  "rawReceiptHashes": {
+    "p1-red.log": "4160477c4b6df925050ab26aac51b34e1a9f3a731e4f64316e7e56ad273a8553",
+    "p1-first.log": "b9195350e3824b184a1aabe6b4a6f5e31a02e11179e068ef11ebdbc5dc54c243",
+    "p1-integration.log": "4f7e8cf0acefedfffa4eee3d16ccb1d653f6a862c35cff5384ad3d45943601e0",
+    "p1-process-closure-red.log": "7c9fb42d769b6b5d066dba8b920afad8fab6992cef16b6dc2b5e64fe904d21ac",
+    "p1-boundaries-green.log": "d5fc67f72a59500f0b8d790d8b0ff208a635503026a50a06432e00cda2e5462b",
+    "p1-final-boundaries.log": "372ec7a8943d947b6672b67ab1fd592df4a1533231ea544116eaa0e4b4f09b53",
+    "p1-review-ready.log": "b8d72014450f3f8bfe4ed8f672e93e62f2eb08b49cc5c445c90f7402ef2f1f51",
+    "p1-review-fixes-red.log": "29e4cac3c002d776b472cbce35a36534420198c85d157c7bfed076952459f7e0",
+    "p1-review-fixes-first-green.log": "ad6421c46fd8a75cae39154ac06be82151e0503c96a546714f0a4d5f077b1561",
+    "p1-review-fixes-green.log": "80b7eb10ba74d35b3d0b2788c7214d2a7d120a5cedf213d46549bec1bdfdf797",
+    "calcifer-p1a-full-test.log": "a97279535ba0115d93e5c1e567e6a406e6781db10f1d20ede46ed4063cda5227",
+    "calcifer-p1a-full-test-receipt.json": "18d16e62973cedfbb4c130da55455d29485a8e44e8cdbf886adc91813d91cc6a",
+    "calcifer-p1a-final-examples.log": "19833060ad186e894debb4aa97b2900b3782394a08f745e566a823fa2c1f601d",
+    "calcifer-p1a-final-review.md": "f842422ad2575e85a1437a3b774ace2dff013f0dd0587b3c78a97adfef4447ae",
+    "calcifer-p1a-fix-review.md": "b6ec70b032dfb123d11849954cf095cefc8b9135b44bed177d0a9b51471b653c",
+    "final-manifest.json": "18268dc93ad286cc993bf9d285d346559f21d886c4bad7b882ff3735e54d8a98",
+    "final-command-receipts.json": "abd6e77da21cdae7f870ac0056286bcaaffb3fb2c071d8a8c4082b28619b485e"
+  },
+  "actualModelRequests": 0,
+  "finalRetainedMockHttpRequests": 8,
+  "p1b": "unstarted",
+  "formalUI": "unstarted",
+  "fullResume": false,
+  "git": {
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "recordedAt": "P1-A validation before subsequent Git delivery; repository history is authoritative for publication status"
+  },
+  "deployment": false,
+  "limits": [
+    "Single worker, single concurrent request; current mock gate allows at most six worker requests, 512 configured output tokens/request, ten-second request deadline and 120-second dispatch window.",
+    "Small complete UTF-8 Node ESM snapshots, exact read/write/create lists and registered Node test argv only; no arbitrary projects/frameworks or shell entry.",
+    "Linux filesystem/network/user namespace plus bounded process/output; no production hostile-code, CPU/RAM/PID/cgroup guarantee.",
+    "UNKNOWN remains safe stop/read-only evidence; no automatic reconciliation/resume. Canonical authority root is fixed; no deduplication across arbitrary state roots/repo copies.",
+    "Fixture response scripts verify mechanisms only; no claim of autonomous model understanding, quality, usage/token accuracy, real provider cost or human acceptance.",
+    "Raw local reports/ledgers/endpoint ports and machine paths remain private. Summary records sanitized hashes and counts only."
+  ]
+}

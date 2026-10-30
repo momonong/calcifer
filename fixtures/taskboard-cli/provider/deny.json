@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "responses": [
+    {
+      "calls": [
+        {
+          "action": "edit",
+          "args": {
+            "path": "UNRELATED.md",
+            "expectedHash": "6d2bab9e86924f32b2031117e0c29a6eb1601b6df8b9e08a2ce56a1050a4b153",
+            "content": "overwritten\n"
+          }
+        },
+        {
+          "action": "check",
+          "args": {
+            "checkId": "unapproved"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Host denied the requested access."
+    }
+  ]
+}

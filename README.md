@@ -112,3 +112,11 @@ T3 的收據 ledger 與 egress gate 是本 spike 的本地政策。它不證明�
 公開repo只保存由既有證據擷取的摘要。重跑會在本機產生完整合成raw receipts與ledger，已由.gitignore排除；沒有對真實資料做通用去敏，請勿直接公開這些輸出。原始收據及歷史中間run另保留本地，公開摘要不是完整trace或新的測試執行。
 
 新checkout請先跑 `npm test`。`test:offline` 的payload契約測試需要既有同版characterization收據；若只準備子集，先執行 `npm run spike` 再執行 `npm run test:offline`。
+
+## P1-A external goal workflow (mock only)
+
+The P1-A entry accepts a caller-provided goal, fresh small repository snapshot and host-authorized scope/checks. Both official OpenCode and Pi SDKs use an ephemeral loopback HTTP mock through the same durable request gate. Tools support scoped reads/search/expected-hash edits/new files and isolated Node project checks. Protected host acceptance, safe stop/UNKNOWN, read-only reopen and verified new-file patch export are included. This is workflow mechanism evidence, not model work-quality validation; P1-B remains unstarted. No real models, UI, full resume or general project support is claimed.
+
+See [P1-A usage and exact CLI/config contract](docs/p1-a-usage.md), [approved scope](docs/p1-a-spec-2026-10-30.md) and [implementation plan](docs/superpowers/plans/2026-10-30-p1-a-workflow.md). Prepare a disposable example with `node fixtures/taskboard-cli/prepare.mjs --directory /tmp/calcifer-p1-example --case t1`.
+
+P1-A verification: targeted 23/23 and one full `npm test` 158/158, exit 0; both retained SDK HTTP mock examples accepted and exported. See [sanitized validation summary](docs/p1-a-validation-2026-10-30.json). Mock mechanism completion does not validate P1-B model work quality.

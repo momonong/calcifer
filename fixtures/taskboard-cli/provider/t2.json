@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "responses": [
+    {
+      "calls": [
+        {
+          "action": "read",
+          "args": {
+            "path": "src/taskboard.mjs"
+          }
+        },
+        {
+          "action": "check",
+          "args": {
+            "checkId": "test"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "edit",
+          "args": {
+            "path": "src/taskboard.mjs",
+            "expectedHash": "ee0322d5624b14ec5cd1a1bdf5fa5bb8df63aded0de45254cd435169837f8d70",
+            "content": "export function listTasks(tasks, {status, before} = {}) {\n  return tasks.filter(task => (!status || task.status === status) && (!before || task.due != null && task.due <= before));\n}\nexport function stats(tasks) {\n  return {total: tasks.length, done: tasks.filter(task => task.status === 'done').length};\n}\n"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "check",
+          "args": {
+            "checkId": "test"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Fixed inclusive deadline boundary with missing due excluded; the same regression now passes."
+    }
+  ]
+}

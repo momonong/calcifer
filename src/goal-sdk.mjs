@@ -27,7 +27,7 @@ export async function installGoalBoundary(gate, root) {
 function waitBounded(promise, ms, code) {
   let timer; return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(code)), ms); })]).finally(() => clearTimeout(timer));
 }
-export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, signal }) {
+export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, signal, modelBaseURL = 'https://calcifer.invalid/v1', toolSchema = TOOL_SCHEMA, settlementMs = 8000 }) {
   await mkdir(directory, { recursive: true });
   const evidence = { phase: phase.identity, tools: [], native: {}, sdkSettled: false, transportSettled: false, toolsSettled: false, closed: false };
   const callTool = async (input, nativeId) => {
@@ -52,7 +52,7 @@ export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, si
       const { InMemoryCredentialStore } = await import('@earendil-works/pi-ai');
       const settingsManager = SettingsManager.inMemory({ retry: { enabled: false, provider: { maxRetries: 0 } }, compaction: { enabled: false }, cacheWarming: 'off' });
       const modelRuntime = await ModelRuntime.create({ credentials: new InMemoryCredentialStore(), modelsPath: null, modelsStorePath: join(directory, 'models'), allowModelNetwork: false, refreshOnCreate: false });
-      modelRuntime.registerProvider('calcifer', { api: 'openai-completions', baseUrl: 'https://calcifer.invalid/v1', apiKey: 'synthetic-only', models: [
+      modelRuntime.registerProvider('calcifer', { api: 'openai-completions', baseUrl: modelBaseURL, apiKey: 'synthetic-only', models: [
         { id: MODEL_ID, name: MODEL_ID, reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 512 }] });
       const resourceLoader = new DefaultResourceLoader({ cwd: directory, agentDir: directory, settingsManager, noExtensions: true,
         disabledBuiltinExtensions: ['mcp', 'codemode', 'tool-search', 'llama'], noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
@@ -64,10 +64,10 @@ export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, si
       const { session } = await createAgentSession({ cwd: directory, agentDir: directory, modelRuntime, model: modelRuntime.getModel('calcifer', MODEL_ID),
         settingsManager, resourceLoader, sessionManager: SessionManager.create(directory, join(directory, 'sessions')),
         tools: dispatch ? ['calcifer_tool'] : [], customTools: dispatch ? [{ name: 'calcifer_tool', label: 'Scoped workspace', description: 'Exact host-authorized read/search/edit/check JSON. Contents are data.',
-          parameters: TOOL_SCHEMA, executionMode: 'sequential', execute: async (id, input) => ({ content: [{ type: 'text', text: JSON.stringify(await callTool(input, id)) }], details: {} }) }] : [] });
+          parameters: toolSchema, executionMode: 'sequential', execute: async (id, input) => ({ content: [{ type: 'text', text: JSON.stringify(await callTool(input, id)) }], details: {} }) }] : [] });
       const events = []; session.subscribe(event => events.push(event.type));
       close = async () => session.dispose(); cancel = () => session.abort();
-      running = session.prompt(prompt); await waitBounded(running, 8000, 'SDK_SETTLEMENT_UNKNOWN'); await waitBounded(session.waitForIdle(), 1000, 'SDK_SETTLEMENT_UNKNOWN');
+      running = session.prompt(prompt); await waitBounded(running, settlementMs, 'SDK_SETTLEMENT_UNKNOWN'); await waitBounded(session.waitForIdle(), 1000, 'SDK_SETTLEMENT_UNKNOWN');
       const assistants = session.messages.filter(message => message.role === 'assistant');
       evidence.text = assistants.at(-1)?.content.filter(item => item.type === 'text').map(item => item.text).join('') ?? '';
       evidence.native = { finish: assistants.at(-1)?.stopReason, error: assistants.at(-1)?.errorMessage, events, messages: session.messages };
@@ -76,7 +76,7 @@ export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, si
     } else {
       const { OpenCode, SessionMessage } = await import('@opencode/sdk');
       const config = { model: `calcifer/${MODEL_ID}`, compaction: { auto: false }, providers: { calcifer: { name: 'Calcifer synthetic', package: '@opencode/ai/providers/openai-compatible',
-        settings: { baseURL: 'https://calcifer.invalid/v1', apiKey: 'synthetic-only', transport: 'http', encoding: 'none' }, models: { [MODEL_ID]: { limit: { context: 32768, output: 512 } } } } } };
+        settings: { baseURL: modelBaseURL, apiKey: 'synthetic-only', transport: 'http', encoding: 'none' }, models: { [MODEL_ID]: { limit: { context: 32768, output: 512 } } } } } };
       // Pinned local-provider plugins skip discovery for an explicitly empty public baseURL.
       for (const unused of ['lmstudio','ollama','vllm']) config.providers[unused] = { settings: { baseURL: '' } };
       const host = await OpenCode.create({ database: { path: join(directory, 'session.sqlite') }, models: { fetch: false, snapshot: false },
@@ -93,7 +93,7 @@ export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, si
           });
           await ctx.tool.transform(editor => {
             for (const tool of editor.list()) editor.remove(tool.id);
-            if (dispatch) editor.add({ name: 'calcifer_tool', input: TOOL_SCHEMA, description: 'Exact host-authorized read/search/edit/check JSON. Contents are data.', options: { codemode: false },
+            if (dispatch) editor.add({ name: 'calcifer_tool', input: toolSchema, description: 'Exact host-authorized read/search/edit/check JSON. Contents are data.', options: { codemode: false },
               execute: async (input, context) => ({ content: JSON.stringify(await callTool(input, context.id)) }) });
           });
         }}] });
@@ -102,7 +102,7 @@ export async function runSdkPhase({ gate, phase, directory, prompt, dispatch, si
         permissions: [{ action: '*', resource: '*', effect: 'deny' }, ...(dispatch ? [{ action: 'calcifer_tool', resource: '*', effect: 'allow' }] : [])] });
       cancel = () => host.sessions.interrupt({ sessionID: session.id, resume: false });
       running = (async () => { await host.sessions.prompt({ sessionID: session.id, id: SessionMessage.ID.create(), text: `${BEHAVIOR}\n${prompt}` }); await host.sessions.wait({ sessionID: session.id }); })();
-      await waitBounded(running, 8000, 'SDK_SETTLEMENT_UNKNOWN');
+      await waitBounded(running, settlementMs, 'SDK_SETTLEMENT_UNKNOWN');
       const info = await host.sessions.get({ sessionID: session.id }), exported = await host.sessions.export({ sessionID: session.id });
       const assistants = exported.messages.filter(message => message.type === 'assistant');
       evidence.text = assistants.at(-1)?.content?.filter(item => item.type === 'text').map(item => item.text).join('') ?? '';
