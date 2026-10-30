@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "responses": [
+    {
+      "status": 503,
+      "text": "Unavailable"
+    }
+  ]
+}

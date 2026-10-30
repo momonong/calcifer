@@ -1,5 +1,15 @@
 # 更新紀錄
 
+## Unreleased — P1-A mock workflow
+
+- 新增外部 repo／goal CLI、scoped read／search／expected-hash edit／exclusive create 工具、預登錄隔離 Node 檢查與受保護 host acceptance。
+- OpenCode／Pi 官方 SDK 實際經 exact-identity ephemeral loopback HTTP 與持久 request gate；保留既有預設與版本，不呼叫真實模型。
+- 新檔案完整進入 final snapshot、manifest、artifact 與 `/dev/null` patch；新增 human-readable summary、安全取消、UNKNOWN 阻重送與唯讀 reopen／export。
+- 全新 taskboard-cli fixture 提供 T1 小功能、T2 同一回歸 red→green、T3 停止／未知與權限案例；public preparation command 可重現。
+- 完成一波獨立審查修正；P1 定向 23/23 與唯一完整 `npm test` 158/158、exit 0。兩套 SDK 最後 HTTP mock 範例及唯讀／patch 收據通過，摘要見 `docs/p1-a-validation-2026-10-30.json`。
+- 此段僅驗流程機制，P1-B 模型工作品質、正式 UI、完整 resume、一般專案支援及 production hostile-code sandbox 仍未驗證／未開始。
+
+
 ## 0.0.7 — 2026-10-30
 
 - 新增唯讀 artifact diff API／Node CLI：沿既有 reopen 核對 completed／accepted run 或 goal，重讀完整 snapshots、manifest 與精確 artifacts 後匯出 unified patch。

@@ -41,7 +41,7 @@ async function verifiedChanges(state){
   }
   return{before,after,artifacts};
 }
-function gitDiff(scratch,spawnGit,settlement){
+export function gitDiff(scratch,spawnGit,settlement){
   const env={PATH:'/usr/bin:/bin',LANG:'C',HOME:join(scratch,'home'),GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_SYSTEM:'/dev/null',GIT_ATTR_NOSYSTEM:'1',GIT_CEILING_DIRECTORIES:dirname(scratch),GIT_OPTIONAL_LOCKS:'0'};
   return new Promise((accept,reject)=>{
     let child;try{child=spawnGit(GIT,[...ARGS],{cwd:scratch,env,detached:true,stdio:['ignore','pipe','pipe']});}catch{settlement.closed=true;reject(new Error('EXPORT_GIT_SPAWN_FAILED'));return;}

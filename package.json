@@ -15,7 +15,9 @@
     "collaboration:run": "node src/collaboration-run-cli.mjs",
     "goal:run": "node src/goal-cli.mjs",
     "test:goal": "node --test --test-concurrency=1 test/goal-request-gate.test.mjs test/goal-runner.test.mjs",
-    "repo:check": "node src/collaboration-run-cli.mjs repo-check"
+    "repo:check": "node src/collaboration-run-cli.mjs repo-check",
+    "p1:run": "node src/p1-cli.mjs",
+    "test:p1": "node --test --test-concurrency=1 test/p1-*.test.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "1.4.0",
