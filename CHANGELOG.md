@@ -1,5 +1,13 @@
 # 更新紀錄
 
+## 0.0.7 — 2026-10-30
+
+- 新增唯讀 artifact diff API／Node CLI：沿既有 reopen 核對 completed／accepted run 或 goal，重讀完整 snapshots、manifest 與精確 artifacts 後匯出 unified patch。
+- 固定本機 Git no-index 比較隔離 scratch，清空繼承環境、禁止 external diff/textconv；完整 close 後才回傳有界 patch bytes，錯誤不輸出部分 patch；來源／state 不變且不重新執行模型或驗收。
+- 三組定向涵蓋真 backend／EOF／CRLF／BOM／路徑、無變更、完整性拒絕與程序結算。沿用兩份 M5 保存 goal，兩者各成功匯出相同 257-byte patch，source/state 前後樹 hash 不變；未重跑 SDK 以產生輸入。
+- M6 完整套件及最後受影響驗證見 [驗證摘要](docs/artifact-export-validation-summary-2026-10-30.json)。根版本 0.0.7、依賴與 M4／M5 protocols 不變。
+- 僅支援相同 UTF-8 檔集合的內容差異；沒有 apply、建立／刪除／rename／mode／binary 功能，不代表外部 repo 已套用、真模型品質或人工接受。
+
 ## 0.0.6 — 2026-10-30
 
 - 新增node-npm-repo：固定零依賴多檔ESM snapshot、實際npm test觀察，加上同snapshot的獨立host JSON CLI oracle。npm0及全部cases皆通過才接受，TAP/exit不是assertion attestation。

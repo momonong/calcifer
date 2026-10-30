@@ -86,6 +86,18 @@ M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證
 
 M5完成後由原目標對話整合；若尚有有益且已授權的下一個獨立增量，依新的分支／唯一writer交接接續，不因舊M4停止文字而停工，也不為填時間擴張。硬截止仍為2026-10-30 12:00 Asia/Taipei，屆時停止新工作並結算現場。
 
+## Milestone 6 — 已驗收 artifacts 的唯讀 patch 匯出（目標版本 0.0.7）
+
+M5 已由 [PR #6](https://github.com/momonong/calcifer/pull/6) 合併後，接續原離線交付目標的薄匯出介面；不再增加生成平台或啟動下一階段。
+
+- [x] 既有 collaboration／goal authoritative reopen，僅 completed／accepted 且無 UNKNOWN 才匯出；重讀完整 snapshots／manifest 並精確重建 artifacts。
+- [x] 固定 Git no-index backend、private scratch、scrubbed environment、完整 close／output bounds；stdout 只含 patch，stderr 短收據，無 apply 或來源／state 寫入。
+- [x] 三組必要定向與兩份既有 M5 goal 匯出 smoke；兩 SDK 保存輸入產生相同 257-byte patch，無新 SDK／模型／runtime checks。
+- [x] M6 唯一完整 npm test135/135、實際exit0、fail／skip／cancel0；同版定向3/3沿用。
+- [ ] 原目標對話公開範圍／Git 核對，依實際交付收據回報。
+
+能力與證據界線見 [M6 契約](milestone-6-artifact-export-2026-10-30.md)／[摘要](artifact-export-validation-summary-2026-10-30.json)。只交付同檔案集合的 UTF-8 內容變更；不代表一般程式正確性、真模型能力、外部套用或人工接受。
+
 ## Review Focus
 
 1. 不可信plan或profile試圖擴張writePaths/checkIds/模型權限，必須在派送前拒絕。

@@ -1,6 +1,6 @@
 # Calcifer（卡西法）
 
-目前版本：**0.0.6**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M4 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
+目前版本：**0.0.7**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M5 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -67,6 +67,14 @@ npm run collaboration:run -- reopen --state-root "$PWD/evidence/repo-check" --ru
 ```
 
 caller CLI 不編輯、不建立 SDK／模型，只做一次 host final並核對收據；內部 profile 是型別相容 placeholder。contract 明列有界檔案與 cases，package/test/CLI entry 由 host保護，npm script固定為 `node --test test/contract.test.mjs`，無install。SDK範例則各5次mock requests，在npm1＋oracle值錯誤後read/edit，最終npm0＋三cases通過、來源不變。M5唯一完整整合132/132、真正exit0；定向與失敗史、config/runtime/npm整樹/shell identity及可用範圍見 [M5契約](docs/milestone-5-npm-repo-validation-2026-10-30.md)／[摘要](docs/npm-repo-validation-summary-2026-10-30.json)。npm內部會使用固定shell，沒有shell-free或通用unit-test可信驗收主張。
+
+M6 可把已完成且通過整合驗收的 run／goal 匯出為標準 unified patch：
+
+```sh
+node src/artifact-diff-cli.mjs --state-root "$PWD/evidence/npm-opencode" --run-id <returned-run-id> > change.patch
+```
+
+請直接用 Node 入口；普通 `npm run` 的 banner 會污染 patch。stdout 只有完整 patch bytes，stderr 是含 manifest／patch hashes 的短 JSON 收據；拒絕時 exit1 且 stdout 空。匯出重開並重新核對保存的 initial／integration snapshots 與完整 artifact 集合，再以固定 `/usr/bin/git diff --no-index` 比較專用 scratch。它不啟動 SDK／模型／npm tests、不套用 patch，也不變更來源或 run state。只支援相同 UTF-8 檔案集合的內容差異；無變更成功輸出空 patch。goal 沿既有規則核對當前來源；一般 collaboration run 依保存快照驗證。runtime／證據仍須核對；patch 始終以保存 initial 為基線，套用到已改變的外部 repo 須另行檢查。固定 Linux Git backend 的界線與驗證見 [M6 契約](docs/milestone-6-artifact-export-2026-10-30.md)／[摘要](docs/artifact-export-validation-summary-2026-10-30.json)。
 
 M2 固定合成 demo 會真的建立隔離檔案快照，兩個相依任務共同修改文字，來源不變；固定 host node-data check 在 namespace 邊界內檢查整合後的 snapshot JSON：
 

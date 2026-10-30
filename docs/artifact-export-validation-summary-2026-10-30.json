@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "version": "0.0.7",
+  "date": "2026-10-30",
+  "scope": "Readonly unified patch export of verified completed accepted saved artifacts; same-file-set UTF-8 content differences only",
+  "runtime": {
+    "platform": "Linux x86_64",
+    "node": "22.22.2",
+    "git": "2.43.0",
+    "fixedGitExecutable": "/usr/bin/git"
+  },
+  "verification": {
+    "targeted": {
+      "command": "node --test test/artifact-diff.test.mjs",
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "exit": 0,
+      "reusedUnchangedSourceEvidence": true
+    },
+    "full": {
+      "command": "npm test",
+      "runs": 1,
+      "tests": 135,
+      "passed": 135,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    "savedGoalExport": [
+      {
+        "framework": "opencode",
+        "provenance": "existing-M5-scripted-mock-goal",
+        "inputReportHash": "0c324582dcda370429ddea8d5bd6c8a4f84ecd252ff1039ec1d07fbce93def48",
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "exported",
+          "acceptanceScope": "verified-saved-content-artifacts",
+          "runFormat": "goal",
+          "initialManifestHash": "9b07c81daafeacae39faad8d24abcffcf5cceb4210a3929dabd2168a5c30cfbc",
+          "finalManifestHash": "c19de4a8bd63aa5cf53d89ca503538292fec4bf63c7608524b1b8f5998fc5dee",
+          "changedFiles": 1,
+          "patchBytes": 257,
+          "patchHash": "94828ab947bf9521ff5db155677b1565c3d8657bea2906b6f1a23ccac258a005",
+          "noInferencePerformed": true
+        },
+        "exit": 0,
+        "sourceUnchanged": true,
+        "stateUnchanged": true,
+        "newSDKRuns": 0,
+        "newModelRequests": 0,
+        "newRuntimeChecks": 0
+      },
+      {
+        "framework": "pi",
+        "provenance": "existing-M5-scripted-mock-goal",
+        "inputReportHash": "70f3f2191adae7e07ed0dc74a2e97e2ed2bd70191a986edc81275de4e4e62121",
+        "receipt": {
+          "schemaVersion": 1,
+          "status": "exported",
+          "acceptanceScope": "verified-saved-content-artifacts",
+          "runFormat": "goal",
+          "initialManifestHash": "9b07c81daafeacae39faad8d24abcffcf5cceb4210a3929dabd2168a5c30cfbc",
+          "finalManifestHash": "c19de4a8bd63aa5cf53d89ca503538292fec4bf63c7608524b1b8f5998fc5dee",
+          "changedFiles": 1,
+          "patchBytes": 257,
+          "patchHash": "94828ab947bf9521ff5db155677b1565c3d8657bea2906b6f1a23ccac258a005",
+          "noInferencePerformed": true
+        },
+        "exit": 0,
+        "sourceUnchanged": true,
+        "stateUnchanged": true,
+        "newSDKRuns": 0,
+        "newModelRequests": 0,
+        "newRuntimeChecks": 0
+      }
+    ]
+  },
+  "failureHistory": [
+    {
+      "stage": "missing-export-module-red",
+      "exit": 1
+    }
+  ],
+  "sourceHashes": {
+    "src/artifact-diff.mjs": "fee59673296e8f6112ee1aec23bd5446f1a3071f80419704a4d0575e1441fbb0",
+    "src/artifact-diff-cli.mjs": "1255069b854b61caa263ba1f47766d0fa1e1c88c8acfecfd43d0f270e7b7c83a",
+    "test/artifact-diff.test.mjs": "23df14547399fabf1f18604e676b49fc42d349923f8e11875b1062dca22b7ab8"
+  },
+  "unchangedCheckProtocolHashes": {
+    "src/json-cli-check.mjs": "bd5d3fa18a5764df2a791c843730393eeb6fcec98664885fb12094edd0b6b174",
+    "src/npm-repo-check.mjs": "bf0ff9af328c0ae72573740e83be456135b1a8ee7ed95a85336e1246dd721b83"
+  },
+  "rawReceiptHashes": {
+    "calcifer-m6-red-20261030.log": "7ccaf283dd67cf63351f73da72b3c3fa273504910775741d6fe571502a6f6f35",
+    "calcifer-m6-red-20261030.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "calcifer-m6-initial-20261030.log": "7c4a1317e0e728aaad5e24578ea98b127f814f11fa686dd3b4c7261342d2bfb6",
+    "calcifer-m6-initial-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "calcifer-m6-targeted-20261030.log": "3ef1bd0e7c4463252f8d9f1be0984f298b03cb55b1922a9d35b2788d3c28be55",
+    "calcifer-m6-targeted-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "calcifer-m6-full-20261030.log": "c1d33282579e7aacfcfb50492afdedd3bf474f38dcc79e673989ce10a221ed72",
+    "calcifer-m6-full-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "calcifer-m6-goal-export-smoke-20261030.mjs": "e3c28d60bff2c32fbf40bdcab08a280faad63a80b9ec0c3bfe3c2ebeabcfce77",
+    "calcifer-m6-goal-export-smoke-20261030.log": "c66aa5b50f1ef3f6b1767219fda187836a625d337f98705f53fd1f66ac488f3e",
+    "calcifer-m6-goal-export-smoke-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "calcifer-m6-goal-export-summary-20261030.json": "c66aa5b50f1ef3f6b1767219fda187836a625d337f98705f53fd1f66ac488f3e",
+    "calcifer-m6-goal-export-opencode-20261030.patch": "94828ab947bf9521ff5db155677b1565c3d8657bea2906b6f1a23ccac258a005",
+    "calcifer-m6-goal-export-opencode-20261030.stderr": "71b882febf5d93580874c99d16520a3832e7c629505c0604f747acc992567a41",
+    "calcifer-m6-goal-export-opencode-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "calcifer-m6-goal-export-pi-20261030.patch": "94828ab947bf9521ff5db155677b1565c3d8657bea2906b6f1a23ccac258a005",
+    "calcifer-m6-goal-export-pi-20261030.stderr": "71b882febf5d93580874c99d16520a3832e7c629505c0604f747acc992567a41",
+    "calcifer-m6-goal-export-pi-20261030.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "limitations": [
+    "Goal reopen verifies current source; collaboration reopen verifies saved snapshots. Patch baseline is always the saved initial snapshot.",
+    "No apply, file creation/deletion/rename, mode, symlink or binary-diff support; external application and human acceptance remain unverified.",
+    "Unknown Git close rejects and retains owned private scratch, including after a late close; no automatic cleanup command.",
+    "Linux fixed Git backend only; no download or fallback when unavailable.",
+    "No new model-quality, general framework, live/service/training or UI claim."
+  ]
+}
