@@ -59,7 +59,7 @@ calcifer --prepare --project demo \
   --turns 8 --note "本階段允許的供應商、資料、操作及資源" --json
 ```
 
-`prepare` 不呼叫模型、不授權、不重設用量，只適用尚未授權／使用的新階段。預設交付 patch；現有文件流程可另提供 `--documents /絕對路徑/documents.json`，沿用既有 `source/python/renderer/maxPages/maxBytes` 契約（A4 PDF 最多 10 頁、20 MiB）。轉換器設定限操作者信任的本機工具，不接受模型產生的任意執行器。
+`prepare` 不呼叫模型、不授權、不重設用量，只適用尚未授權／使用且已配置 routing 的新階段，程式與文件目標皆同。預設交付 patch；現有文件流程可另提供 `--documents /絕對路徑/documents.json`，沿用既有 `source/python/renderer/maxPages/maxBytes` 契約（A4 PDF 最多 10 頁、20 MiB）。沒有 routing 的文件任務在準備／重開時會報 `PREPARED_DOCUMENTS_REQUIRES_ROUTING`，不等模型工作後才失敗；一般單模型 `work` 入口不受影響。轉換器設定限操作者信任的本機工具，不接受模型產生的任意執行器。
 
 完成供應商與資料範圍確認後，人工或已有明確批准的操作者使用 `calcifer --start --project demo --yes --jsonl`。這會沿用準備好的確切呼叫上限及範圍。後續查詢不需要 `--yes`，既有批准仍有效時接續也不重設預算。
 

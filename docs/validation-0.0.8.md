@@ -2,8 +2,9 @@
 
 2026-11-09，Linux x86_64，Node 22.22.2、npm 10.9.7、Bun 1.4.4。依原 lockfile 使用 `npm ci --offline --no-audit --no-fund` 安裝 421 packages；沒有更新模型或依賴版本。
 
-- `npm test`：先跑兩框架 mock characterization／offline fixtures，再跑 Node 整合套件，最終 **358 passed、0 failed、0 skipped，exit 0**。
+- `npm test`：先跑兩框架 mock characterization／offline fixtures，再跑 Node 整合套件；額度接續修正後的整合基線（`3330e09`）為 **358 passed、0 failed、0 skipped，exit 0**。
 - PR 審查指出兩個子任務之間用完額度後無法續跑；三個新增回歸案例先確認失敗，修正後完整 routing suite **20/20**，再執行上述最終整合套件。新授權只續做剩餘任務，不重送 planner／已驗收工作；額度與工作區變動限制保留。
+- 最後補上文件 prepare／重開時的 routing 前置核對。兩個新回歸案例先確認失敗；修正後 `npm run test:project` **161 passed、0 failed、0 skipped，exit 0**，涵蓋受影響的 project、CLI、prepared、來源確認、文件交付與路由。其餘未變更範圍沿用上列整合基線，不把測試數相加。
 - `node bin/calcifer.mjs --version --json`：版本 0.0.8；help 可執行。
 - 以既有 bundled Python 執行 `python3 -B test/test_document_renderer.py`：**3 tests passed，exit 0**。完整實際 Word／PDF 排版能力仍依已配置 renderer、字型及人工逐頁檢查；不把單元測試當送件完成。
 - 公開變更檔案已核對相對連結、diff 格式及敏感資料；未收錄私有 sessions、原始模型紀錄、憑證或實際部署端點。

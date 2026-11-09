@@ -15,7 +15,7 @@ export async function prepareProjectTask({stateDir,title,task,maxTurns,note,docu
  if(current.pending)fail('PROJECT_PENDING');
  if(current.maxTurns!==null||current.turnsUsed||current.goal)fail('PREPARED_SESSION_ALREADY_USED');
  const p={schemaVersion:1,title,task,maxTurns,note,documents,binding:binding(current)};validate(p);
- if(documents===null&&!current.routing)fail('PREPARED_CODE_REQUIRES_ROUTING');
+ if(!current.routing)fail(documents===null?'PREPARED_CODE_REQUIRES_ROUTING':'PREPARED_DOCUMENTS_REQUIRES_ROUTING');
  if(documents!==null&&!canEditProject(documents.source,current.profile))fail('PREPARED_DOCUMENT_SCOPE');
  const record={...p,hash:digest(p)};
  await writeDurable(join(stateDir,'prepared-task.json'),JSON.stringify(record,null,2)+'\n',true);
@@ -29,5 +29,6 @@ export async function readPreparedTask({stateDir}){
  if(hash!==digest(p))fail('PREPARED_TASK_CHANGED');
  const current=await projectStatus({stateDir});
  if(digest(p.binding)!==digest(binding(current)))fail('PREPARED_SCOPE_CHANGED');
+ if(!current.routing)fail(p.documents===null?'PREPARED_CODE_REQUIRES_ROUTING':'PREPARED_DOCUMENTS_REQUIRES_ROUTING');
  return {...p,hash};
 }

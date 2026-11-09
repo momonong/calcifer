@@ -29,7 +29,7 @@ Thor 的單筆 CLI 可在原生 Windows Python 3.12 做局部驗收：`py -3.12 
 
 新建 Calcifer session 的額外前置：目前公開 `init` 固定從 **Linux 執行帳號的原生主目錄**讀 `~/.codex/AGENTS.md`，以及 `~/.codex/agent-playbook/versions/80a550a2f2efc1c3790935b2b806b1bf0971cdbe/`。核心須含相同 guides-commit；快照須有相同 `SOURCE_COMMIT`，及 `guides/engineering.md`、`external-execution.md`、`model-selection.md`、`collaboration.md`。此 loader 目前不讀另一個 CODEX_HOME。Windows 端已讀到指南不代表 WSL 已配置；缺件時依既有裝置同步流程準備明列的非秘密指南，不複製登入或整份 .codex。
 
-公開 `bin/calcifer.mjs` 不自動修改 PATH。Codex adapter 查 Linux `PATH` 的 `codex` 並核對版本與該執行帳號登入；agy adapter 查 Linux `~/.local/bin/agy`。範例路由的 planner 需要 agy。若只有相容 Codex，可依 CLI 文件的單模型入口執行已拆分工作；不能暗中改模型池或借用 Windows 登入。
+公開 `bin/calcifer.mjs` 不自動修改 PATH。Codex adapter 查 Linux `PATH` 的 `codex` 並核對版本與該執行帳號登入；agy adapter 查 Linux `~/.local/bin/agy`。範例路由的 planner 需要 agy。若只有相容 Codex，可依 CLI 文件的單模型 `work` 入口執行已拆分工作；`prepare/start` 的程式與文件交付都需要明確 routing，不能用單模型設定冒充已可執行整段文件流程。不能暗中改模型池或借用 Windows 登入。
 
 ## 3. 先讓 Calcifer 在當前裝置可控地工作
 
