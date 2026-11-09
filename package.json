@@ -1,6 +1,6 @@
 {
   "name": "calcifer-harness-spike",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,14 +17,26 @@
     "test:goal": "node --test --test-concurrency=1 test/goal-request-gate.test.mjs test/goal-runner.test.mjs",
     "repo:check": "node src/collaboration-run-cli.mjs repo-check",
     "p1:run": "node src/p1-cli.mjs",
-    "test:p1": "node --test --test-concurrency=1 test/p1-*.test.mjs"
+    "test:p1": "node --test --test-concurrency=1 test/p1-*.test.mjs",
+    "research:run": "bun src/research-cli.mjs",
+    "test:research": "node --test test/research-*.test.mjs",
+    "thor": "node bin/calcifer.mjs thor",
+    "test:thor": "node --test --experimental-test-isolation=none --test-concurrency=1 test/project-session.test.mjs test/project-workspace.test.mjs test/calcifer-cli.test.mjs test/calcifer-entry.test.mjs test/project-registry.test.mjs test/agy-tool-gate.test.mjs test/agy-worker.test.mjs",
+    "calcifer": "node bin/calcifer.mjs",
+    "test:project": "node --test --experimental-test-isolation=none --test-concurrency=1 test/project-session.test.mjs test/project-workspace.test.mjs test/project-generic.test.mjs test/project-tool-gate.test.mjs test/calcifer-cli.test.mjs test/calcifer-entry.test.mjs test/project-registry.test.mjs test/agy-tool-gate.test.mjs test/agy-worker.test.mjs test/codex-worker.test.mjs test/project-execution.test.mjs test/project-routing.test.mjs test/project-routing-cli.test.mjs test/prepared-cli.test.mjs test/prepared-project.test.mjs test/document-delivery.test.mjs test/prepared-inputs.test.mjs test/prepared-code.test.mjs test/command-interface.test.mjs",
+    "test:commands": "node --test --experimental-test-isolation=none --test-concurrency=1 test/command-interface.test.mjs test/calcifer-cli.test.mjs test/calcifer-entry.test.mjs test/prepared-cli.test.mjs test/project-routing-cli.test.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "1.4.0",
     "@earendil-works/pi-coding-agent": "1.4.0",
+    "@modelcontextprotocol/client": "2.3.1",
     "@opencode/cli": "2.1.4",
     "@opencode/plugin": "2.1.4",
     "@opencode/sdk": "2.1.4",
-    "bun": "1.4.4"
+    "bun": "1.4.4",
+    "htmlparser2": "8.0.2"
+  },
+  "bin": {
+    "calcifer": "bin/calcifer.mjs"
   }
 }

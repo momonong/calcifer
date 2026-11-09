@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light"><title>卡西法 · 遠端工作台</title><link rel="stylesheet" href="/calcifer/app.css"><script type="module" src="/calcifer/app.mjs"></script></head>
+<body>
+ <section id="login" class="login" aria-labelledby="login-title">
+  <div class="wordmark">CALCIFER <span>遠端工作台</span></div>
+  <h1 id="login-title">接續你的工作。</h1>
+  <p>手機和電腦共用同一段工作。檔案、模型與測試都留在開發主機上執行。</p>
+  <form id="login-form"><label for="password">遠端登入密碼</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="256"><label for="device">這台裝置的名稱</label><input id="device" autocomplete="off" maxlength="80" placeholder="例如：我的手機" value="我的瀏覽器"><button class="primary" type="submit">登入工作台</button></form>
+  <p id="login-error" role="alert"></p><p class="subtle">密碼由主機上的 <code>calcifer remote password</code> 設定；不使用模型供應商的帳號密碼。</p>
+ </section>
+ <div id="workspace" class="workspace" hidden>
+  <header class="topbar"><a href="/calcifer/" class="brand">卡西法<span>CALCIFER</span></a><span id="connection" role="status">正在連線</span><button id="logout" class="quiet">登出</button></header>
+  <aside class="sidebar"><label for="project">目前專案</label><select id="project"></select><p id="host" class="subtle"></p><div class="sidebar-note">對話可遠端操作<br>工作由主機繼續執行</div><button id="logout-all" class="quiet">登出所有裝置</button></aside>
+  <main class="sheet">
+   <div class="project-heading"><div><p class="eyebrow">專案工作階段</p><h1 id="project-name">載入中</h1></div><button id="refresh" class="quiet">重新同步</button></div>
+   <p id="project-status" class="status-line" aria-live="polite"></p>
+   <div id="notice" class="notice" role="status" hidden></div>
+   <button id="retry-pending" class="secondary" hidden>核對後，以原編號重送</button>
+   <details class="scope"><summary>模型、資源與工作範圍</summary><div id="scope-content"></div><button id="authorize" class="secondary">批准下一階段資源</button></details>
+   <section id="transcript" class="transcript" aria-label="工作對話"></section>
+   <nav class="tools" aria-label="專案操作"><button data-action="test">執行相關測試</button><button data-action="export">產生 patch</button><button data-action="recover">核對未知結果</button><button id="resume" data-action="resume">接續未完成目標</button></nav>
+   <form id="composer" class="composer"><label for="task">交代下一件工作</label><textarea id="task" rows="3" maxlength="16000" placeholder="描述目標、完成條件與需要保留的內容……" required></textarea><div class="composer-bottom"><p id="compose-hint">送出前會沿用此專案既有的模型授權。</p><button id="send" class="primary" type="submit">送出工作</button></div></form>
+   <p class="footer-note">關閉此頁不會停止工作。只有「要求停止」會送出取消；遠端模型是否已停止會另外標示。</p>
+  </main>
+ </div>
+ <dialog id="approval" aria-labelledby="approval-title"><form id="approval-form"><h2 id="approval-title">批准下一階段資源</h2><p>這會更新此專案的模型授權。請先核對模型、資料與既有帳號扣點設定。</p><div id="approval-scope"></div><label for="turns">規劃、執行與修正合計呼叫上限</label><input id="turns" type="number" min="1" max="8" value="2" required><label for="minutes">執行時間上限（分鐘，可留空）</label><input id="minutes" type="number" min="1" max="35791" placeholder="不設整體執行期限"><label for="approval-note">本次批准的用途與資源</label><textarea id="approval-note" rows="3" required maxlength="4096" placeholder="例如：完成 CSV 檢查任務，允許使用列出的既有 credits。"></textarea><p class="subtle">只使用列出的供應商與既有資源。不購買、不切帳號、不兌換 reset。</p><div class="dialog-actions"><button type="button" id="approval-cancel">取消</button><button class="primary" type="submit">確認批准</button></div></form></dialog>
+ <noscript>此工作台需要啟用 JavaScript 才能登入和同步執行狀態。</noscript>
+</body></html>

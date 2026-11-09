@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "planner": "argon-planner",
+  "dataClass": "cloud-allowed",
+  "maxTasks": 4,
+  "profiles": [
+    {"id":"argon-planner","execution":{"backend":"agy","model":"gemini-4-argon-high","version":"1.5.3","effort":"high"},"capabilities":["plan","reasoning","implementation"],"enabled":true,"available":true,"maxCalls":1,"resource":"included","expiresAt":null},
+    {"id":"astra-worker","execution":{"backend":"codex","model":"gpt-6-astra","version":"0.167.0-alpha.3.2","effort":"high"},"capabilities":["reasoning","implementation","routine"],"enabled":true,"available":true,"maxCalls":6,"resource":"existing-credits","expiresAt":null},
+    {"id":"terra-worker","execution":{"backend":"codex","model":"gpt-6.1-terra","version":"0.167.0-alpha.3.2","effort":"medium"},"capabilities":["routine"],"enabled":true,"available":true,"maxCalls":2,"resource":"existing-credits","expiresAt":null}
+  ],
+  "preferences": {
+    "reasoning": ["astra-worker","argon-planner"],
+    "implementation": ["astra-worker","argon-planner"],
+    "routine": ["terra-worker","astra-worker"]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "responses": [
+    {
+      "calls": [
+        {
+          "action": "web_search",
+          "args": {
+            "query": "MCP stdio and Streamable HTTP transports"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "web_fetch",
+          "args": {
+            "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/transports"
+          }
+        }
+      ]
+    },
+    {
+      "calls": [
+        {
+          "action": "mcp_read",
+          "args": {
+            "query": "What can the documentation service do?"
+          }
+        }
+      ]
+    },
+    {
+      "text": "{\"findings\":[{\"sourceId\":\"S1\",\"excerpt\":\"For stdio, the client starts the server as a subprocess.\"},{\"sourceId\":\"S1\",\"excerpt\":\"With Streamable HTTP, an independent server handles requests at an HTTP endpoint.\"},{\"sourceId\":\"S2\",\"excerpt\":\"This service only reads documentation and does not call the OpenAI API.\"}],\"recommendation\":{\"text\":\"第一版採 Streamable HTTP，因為指定文件服務由獨立的 HTTP 端點提供唯讀查詢。\",\"sourceIds\":[\"S1\",\"S2\"]}}"
+    }
+  ]
+}

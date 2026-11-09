@@ -2,3 +2,9 @@ node_modules/
 .spike-runtime/
 evidence/*
 !evidence/offline-validation-summary.json
+
+.tmp/
+.cache/
+.env
+.env.*
+!*.example

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "name": "Taskboard CLI",
+  "sourceFiles": [
+    "taskboard/count.py",
+    "checks/test_count.py",
+    "README.md"
+  ],
+  "writeRules": [
+    {
+      "root": "taskboard",
+      "extensions": [
+        ".py"
+      ]
+    },
+    {
+      "root": "checks",
+      "extensions": [
+        ".py"
+      ]
+    }
+  ],
+  "check": {
+    "kind": "python-unittest",
+    "testDir": "checks",
+    "timeoutMs": 10000
+  }
+}
