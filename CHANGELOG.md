@@ -1,5 +1,14 @@
 # 更新紀錄
 
+## 0.0.8 — 2026-11-09
+
+- 保存通用專案 CLI、Codex／agy 後端、任務路由、prepared 工作與文件／patch 交付；新增單次旗標、JSON／JSONL 和 `--revise`。
+- 保存有來源核對的離線研究工具流程，以及已完成本機驗收的遠端控制層；範本使用示例網域，不代表部署。
+- 保留來源範圍、UNKNOWN 對帳、同工作對話修正、用量上限與不可重設收據；不自動重送、切帳號或購買額度。
+- 新增 Windows 接續文件及研究／實驗順序；Linux 通過不外推 Windows／WSL 或手臂能力。
+- 本次公開內容為程式、合成案例及去識別文件；私有工作階段、原始模型紀錄、憑證、實際網路設定不在版本內。
+
+
 ## Unreleased — P1 read result limit correction
 
 - 純 read／search 的完整 JSON 結果超過輸出額度時，改記已知 `TOOL_OUTPUT_LIMIT` 並完成失敗 intent，避免誤留 UNKNOWN 鎖住後續工作；保留原輸出上限、寫入與真實 journal ack 遺失的 UNKNOWN 保護。

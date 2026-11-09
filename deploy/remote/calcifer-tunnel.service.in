@@ -1,0 +1,16 @@
+[Unit]
+Description=Calcifer encrypted connection to HP HTTPS gateway
+After=calcifer-remote.service network-online.target
+BindsTo=calcifer-remote.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -N -T -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ControlMaster=no -o ControlPath=none -R 127.0.0.1:18470:127.0.0.1:18470 hp-server
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=5
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

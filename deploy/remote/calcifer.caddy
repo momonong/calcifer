@@ -1,0 +1,24 @@
+	# BEGIN calcifer remote workbench
+	@calcifer path /calcifer /calcifer/*
+	handle @calcifer {
+		@calcifer_http not header X-Forwarded-Proto https
+		route {
+			header Cache-Control "no-store"
+			redir @calcifer_http https://workbench.example.com{uri} 308
+			redir /calcifer /calcifer/ 308
+			request_body {
+				max_size 32768
+			}
+			reverse_proxy 127.0.0.1:18470 {
+				header_up Host workbench.example.com
+				header_up -Authorization
+				header_up -Proxy-Authorization
+				header_up -Forwarded
+				header_up -X-Forwarded-For
+				header_up -X-Forwarded-Host
+				header_up X-Forwarded-Proto https
+				flush_interval -1
+			}
+		}
+	}
+	# END calcifer remote workbench

@@ -1,17 +1,23 @@
 # Calcifer（卡西法）
 
-> **2026-11-07 接續入口：MVP 規格與環境已整理，功能開發等待確認。**
+> **0.0.8｜2026-11-09：可保存、修訂與交付的通用 CLI 工作階段。**
+> 使用 `node bin/calcifer.mjs --help`；安裝啟動器後可用 `calcifer --…`。支援明確模型池內的任務分配、Codex／agy adapters、隔離 Python 驗收、JSON／JSONL、完成成果修訂及 patch／文件交付。
+> Thor 是驗收案例，不是產品綁定。此版本驗證平台為 Linux；Windows 原生不支援目前的 `/usr/bin/flock`、Python 3.12 與 Linux namespaces 隔離器，WSL 尚待筆電驗收，禁止無隔離 fallback。
+> 先讀 [CLI 操作](docs/project-cli.md)、[Windows 交接與實驗順序](docs/handoffs/windows-thor-2026-11-09.md) 與 [版本驗證](docs/validation-0.0.8.md)。模型登入、額度與原始私有 sessions 不包含在 Git。
+> 本版本保存現有遠端控制程式與範本，不部署或改網路。OpenCode／Pi 真實同模型比較、正式 UI、多帳號額度調度及機器人操作仍有獨立範圍。
+
+> **歷史階段：2026-11-07 接續入口：MVP 規格與環境已整理，功能開發等待確認。**
 > Thor 送件優先，暫不租雲端。先讀 [MVP 範圍、驗收與順序](docs/mvp-scope-and-acceptance-2026-11-07.md) 與 [環境準備及開工條件](docs/mvp-readiness-2026-11-07.md)。
 > 本次只保存這兩份文件與 README 入口；研究功能增量仍留本機。P1-B、正式 UI、模型呼叫與服務繼續暫停。下方保留歷史停止點與原成果。
 
-> **目前停止點（2026-10-30）：P1-A 已完成並合併，後續暫停。**
+> **歷史停止點（2026-10-30）：P1-A 已完成並合併，後續暫停。**
 > OpenCode 為主選、Pi 為對照；P1-A 已用短暫 **loopback HTTP mock** 驗證官方 SDK 與八模組，真實模型請求 0。最新程式基線為 PR #9 合併 `32a6321`，完整驗證 163/163、exit 0。
 > **P1-B 包含離線接線都等待使用者明確確認模型、資源與實測窗口後才接續；不自動 resume，不啟動 live／UI／服務。**
 > 接續請先讀 [P1-A 停止點與 P1-B 待確認清單](docs/p1a-checkpoint-2026-10-30.md)。根 package 仍為 0.0.7，未發新版。
 
 ## 0.0.7 底座與既有驗證（保留歷史說明）
 
-目前版本：**0.0.7**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M5 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
+當時版本：**0.0.7**（2026-10-30）。完成 goal → 經本機驗證的 TaskPlan／自動路由 → 官方 SDK 工具迴圈 → 隔離檔案整合 → host 固定驗收；保留 node-data／node-json-cli，並新增固定零依賴多檔 ESM 的 npm test 觀察＋同 snapshot host JSON oracle。OpenCode 為預設、Pi 保留對照；planner/worker 的所有回應仍為程序內 mock，實際模型請求 0。10/30 自動路由與協作指示已取代人工 profile only 決策；[協作計畫](docs/collaborative-development-plan-2026-10-30.md) 的 M1–M5 已合併；M5 已有可用 caller repo-check CLI 與官方 SDK 合成修正流程。npm exit/TAP 不代表 assertions 來源可信；一般依賴／任意 scripts／測試框架適配仍未支援；正式 UI、服務及 live 不在本輪啟動範圍。
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
@@ -19,7 +25,7 @@
 
 本輪結論：保留 OpenCode 為條件式主選，Pi 為對照；正式採用所需的真實模型效率與完整 UNKNOWN 恢復仍待驗證。比較表、最小 UI 建議與待決資訊見 [decision.md](decision.md)。
 
-Selfhost 接入的離線準備已加入嚴格 payload adapter、持久 model request intent／UNKNOWN gate、共享 40 次上限與明確候選 profile。服務恢復、ready/models 現場核對與實測窗口仍待確認；正式 UI 繼續暫停。這個 repo 沒有可啟用的 live mode。
+Selfhost 接入的離線準備已加入嚴格 payload adapter、持久 model request intent／UNKNOWN gate、共享 40 次上限與明確候選 profile。服務恢復、ready/models 現場核對與實測窗口仍待確認；正式 UI 繼續暫停。這個原 selfhost spike 沒有可啟用的 live mode；0.0.8 的 CLI backend 是分開的執行路徑。
 
 目前使用 OpenCode 2.1.4、Pi 1.4.0、專案內 Bun 1.4.4；每個實際 provider request 的輸出上限皆為512。原 characterization 每案最多3次 accepted request；selfhost 路徑每框架每任務最多6次、工具canary最多2次，共用40次上限。Node 22.22.2 用來執行測試與啟動器。本機 OpenCode SDK 在 Node 22 的 import 語法失敗另有保留，實際兩個 harness 都用同版 Bun。啟動器會依實際 host runtime 記錄相容性，不預設其他 Node 版本必須失敗；其他版本尚未測試。
 
@@ -131,3 +137,22 @@ The P1-A entry accepts a caller-provided goal, fresh small repository snapshot a
 See [P1-A usage and exact CLI/config contract](docs/p1-a-usage.md), [approved scope](docs/p1-a-spec-2026-10-30.md) and [implementation plan](docs/superpowers/plans/2026-10-30-p1-a-workflow.md). Prepare a disposable example with `node fixtures/taskboard-cli/prepare.mjs --directory /tmp/calcifer-p1-example --case t1`.
 
 P1-A verification: targeted 23/23 and one full `npm test` 158/158, exit 0; both retained SDK HTTP mock examples accepted and exported. See [sanitized validation summary](docs/p1-a-validation-2026-10-30.json). Mock mechanism completion does not validate P1-B model work quality.
+
+## 離線研究流程
+
+從一次搜尋、一頁原文及一個唯讀 MCP 工具取得證據，交付 Markdown 報告。範例研究題目比較 stdio 與 Streamable HTTP，並查核文件服務的能力。OpenCode 2.1.4 執行實際工具迴圈，模型與外部資料由本機 HTTP fixture 提供。
+
+```sh
+research_dir=$(mktemp -d /tmp/calcifer-research-XXXXXX)
+npm run research:run -- run \
+  --question '卡西法接入公開唯讀文件服務，應選 stdio 還是 Streamable HTTP？' \
+  --profile research-fixture \
+  --mock-script fixtures/research/mcp-transport-model.json \
+  --output "$research_dir/run"
+```
+
+使用 Node 22 與專案鎖定的 Bun 1.4.4。輸出目錄必須是尚未建立的絕對路徑。CLI 回傳本次的執行目錄、完成狀態與收據摘要。完成時，目錄內有 `report.md`、`sources.json` 與持久帳本。主機以取得的正文或 MCP 結果核對摘錄，建議另標為模型推論。範例摘錄是為驗收而寫的合成資料，連結保留正式參考來源。
+
+每次最多搜尋 2 次、讀頁 3 次及呼叫 MCP 工具 1 次。MCP 握手和列工具各一次，官方 client 的事件通道探測在本機收到 405。工具逐次執行，派送窗口 90 秒，單一工具 HTTP 請求限 10 秒。逾時與取消保留帳本，未取得必要證據的執行會回傳非零狀態。
+
+執行 `npm run test:research` 可重驗工具接線、引用與停止規則。公開搜尋與 MCP 端點的可用性，以及真實模型的研究品質，仍待現場驗收。

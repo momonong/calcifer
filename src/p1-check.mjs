@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { nodeRuntimeIdentity } from './json-cli-check.mjs';
 import { digest, fail, hash } from './workspace-tools.mjs';
@@ -9,11 +9,18 @@ export async function bindP1Runtime(binary){
   for(const file of ['/usr/bin/timeout','/usr/bin/unshare','/usr/bin/bwrap'])await access(file,constants.X_OK);
   return nodeRuntimeIdentity(binary);
 }
+export async function bindPythonRuntime(binary){
+  if(binary!=='/usr/bin/python3.12')fail('HOST_PYTHON_BINARY_REQUIRED');
+  if(process.platform!=='linux')fail('CHECK_ISOLATION_UNAVAILABLE');
+  for(const file of [binary,'/usr/bin/timeout','/usr/bin/unshare','/usr/bin/bwrap'])await access(file,constants.X_OK);
+  const bytes=await readFile(binary);return {kind:'python',path:binary,hash:hash(bytes),bytes:bytes.length};
+}
 export async function runP1Check({snapshotDir,manifest,definition,runtime,acceptancePath,signal,maxOutputBytes=32768,stage,checkId}){
   if(signal?.aborted)fail('CHECK_CANCELLED_BEFORE_DISPATCH');
-  const args=['--signal=TERM','--kill-after=0.2s',`${definition.timeoutMs/1000}s`,'/usr/bin/unshare','--user','--map-root-user','--net','--fork','--kill-child=KILL','/usr/bin/bwrap','--unshare-user','--unshare-all','--share-net','--die-with-parent','--new-session','--cap-drop','ALL','--disable-userns','--assert-userns-disabled','--clearenv','--ro-bind','/usr','/usr','--ro-bind','/lib','/lib','--ro-bind','/lib64','/lib64','--dir','/runtime','--ro-bind',runtime.path,'/runtime/node','--proc','/proc','--dev','/dev','--tmpfs','/tmp','--ro-bind',snapshotDir,'/workspace','--chdir','/workspace','--setenv','PATH','/runtime:/usr/bin','--setenv','HOME','/tmp','--setenv','TMPDIR','/tmp','--setenv','LANG','C'];
-  if(acceptancePath)args.push('--dir','/acceptance','--ro-bind',acceptancePath,'/acceptance/check.mjs');
-  args.push('--remount-ro','/','--','/runtime/node',...(acceptancePath?['--test','/acceptance/check.mjs']:definition.argv));
+  const python=runtime.kind==='python', executable=python?'/runtime/python3':'/runtime/node', acceptanceFile=python?'/acceptance/check.py':'/acceptance/check.mjs';
+  const args=['--signal=TERM','--kill-after=0.2s',`${definition.timeoutMs/1000}s`,'/usr/bin/unshare','--user','--map-root-user','--net','--fork','--kill-child=KILL','/usr/bin/bwrap','--unshare-user','--unshare-all','--share-net','--die-with-parent','--new-session','--cap-drop','ALL','--disable-userns','--assert-userns-disabled','--clearenv','--ro-bind','/usr','/usr','--ro-bind','/lib','/lib','--ro-bind','/lib64','/lib64','--dir','/runtime','--ro-bind',runtime.path,executable,'--proc','/proc','--dev','/dev','--tmpfs','/tmp','--ro-bind',snapshotDir,'/workspace','--chdir','/workspace','--setenv','PATH','/runtime:/usr/bin','--setenv','HOME','/tmp','--setenv','TMPDIR','/tmp','--setenv','LANG','C'];
+  if(acceptancePath)args.push('--dir','/acceptance','--ro-bind',acceptancePath,acceptanceFile);
+  args.push('--remount-ro','/','--',executable,...(acceptancePath?(python?['-I','-B',acceptanceFile]:['--test',acceptanceFile]):definition.argv));
   const raw=await new Promise((accept,reject)=>{
     const child=spawn('/usr/bin/timeout',args,{env:{PATH:'/usr/bin:/bin'},detached:true,stdio:['ignore','pipe','pipe']});
     let stdout=Buffer.alloc(0),stderr=Buffer.alloc(0),outputLimit=false,cancelled=false,spawnError=null,killTimer,closed=false;
@@ -26,7 +33,7 @@ export async function runP1Check({snapshotDir,manifest,definition,runtime,accept
     child.once('close',(exitCode,exitSignal)=>{closed=true;clearTimeout(watchdog);clearTimeout(killTimer);signal?.removeEventListener('abort',abort);accept({stdout:stdout.toString('utf8'),stderr:stderr.toString('utf8'),stdoutBase64:stdout.toString('base64'),stderrBase64:stderr.toString('base64'),outputPreviewEncoding:'utf8-with-replacement',stdoutHash:hash(stdout),stderrHash:hash(stderr),process:{closed:true,exitCode,signal:exitSignal,spawnError,outputLimit,cancelled,timedOut:exitCode===124||exitCode===137,isolationError:exitCode!==0&&/(?:unshare|bwrap):/.test(stderr.toString('utf8'))}});});
   });
   const p=raw.process,passed=p.exitCode===0&&p.signal===null&&!p.spawnError&&!p.outputLimit&&!p.cancelled&&!p.isolationError;
-  return{stage,checkId,kind:'node-project-command',manifestHash:manifest.hash,definitionHash:definition.definitionHash,runtimeHash:digest(runtime),...raw,status:passed?'passed':'failed',code:passed?'CHECK_PASSED':p.isolationError?'CHECK_ISOLATION_UNAVAILABLE':p.cancelled?'CHECK_CANCELLED':p.outputLimit?'CHECK_OUTPUT_LIMIT':p.timedOut||p.signal?'CHECK_TIMEOUT_OR_TERMINATED':'CHECK_NONZERO_EXIT'};
+  return{stage,checkId,kind:python?'python-project-command':'node-project-command',manifestHash:manifest.hash,definitionHash:definition.definitionHash,runtimeHash:digest(runtime),...raw,status:passed?'passed':'failed',code:passed?'CHECK_PASSED':p.isolationError?'CHECK_ISOLATION_UNAVAILABLE':p.cancelled?'CHECK_CANCELLED':p.outputLimit?'CHECK_OUTPUT_LIMIT':p.timedOut||p.signal?'CHECK_TIMEOUT_OR_TERMINATED':'CHECK_NONZERO_EXIT'};
 }
 
 // A missing/unknown process receipt never becomes closure through Array.every([]).
