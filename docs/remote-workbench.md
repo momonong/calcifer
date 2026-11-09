@@ -37,7 +37,7 @@ calcifer remote serve --config /私人目錄/remote.json
 
 ## 遠端部署
 
-已準備 `deploy/remote/` 中的兩個 user systemd 範本、Caddy prefix 與固定範圍安裝器。路徑為：
+已準備 `deploy/remote/` 中的兩個 user systemd 範本、Caddy prefix 與固定範圍安裝器。公開範本中的 `@GATEWAY_HOST@`、`@REPO@`、`@NODE@`、`@CONFIG@`、`@PATH@` 與 example.com 均需在已授權部署時依實際環境替換，不能原樣啟動。路徑為：
 
 ```text
 手機／其他電腦 → 既有 HTTPS 閘道 → gateway Caddy /calcifer/
