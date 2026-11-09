@@ -133,6 +133,44 @@ test('review R3: new explicit budget resumes known failed worker with its origin
  const result=await workProject({...f,task:'Change'},{worker:async req=>{calls++;assert.equal(req.model,'gpt-6-astra');assert.equal(req.conversationId,ids[1]);assert.match(req.prompt,/SyntaxError/);await writeFile(join(req.directory,'app/value.py'),'VALUE=2\n');return terminal(req,'Corrected',ids[1]);}});
  assert.equal(result.status,'completed');assert.equal(calls,1);assert.equal((await projectStatus(f)).turnsUsed,1);
 });
+async function stopBetweenTasks(){
+ const f=await setup(routing,3);let calls=0;
+ const result=await workProject({...f,task:'Change value in two stages'},{worker:async req=>{
+  calls++;
+  if(calls===1)return terminal(req,response([task('reason'),task('format','routine','terra',['reason'])]),ids[0]);
+  await writeFile(join(req.directory,'app/value.py'),calls===2?'VALUE = syntax error\n':'VALUE=2\n');
+  return terminal(req,calls===2?'Needs correction':'First task corrected',ids[1]);
+ }});
+ assert.equal(result.status,'failed');assert.equal(result.code,'RESOURCE_LIMIT');assert.equal(calls,3);
+ assert.deepEqual(result.goal.results.map(r=>r.planTaskId),['reason']);
+ return f;
+}
+for(const entry of ['work','resume'])test(`new budget continues between-task resource stop via ${entry} without replaying accepted work`,async()=>{
+ const f=await stopBetweenTasks();const before=await projectStatus(f);
+ const never={worker:()=>assert.fail('exhausted budget must not dispatch')};
+ assert.equal((await workProject({...f,task:'Change value in two stages'},never)).code,'RESOURCE_LIMIT');
+ const exhausted=await sessions.resumeProjectGoal(f,never).catch(error=>({status:'failed',code:error.message}));
+ assert.equal(exhausted.status,'failed');assert.equal(exhausted.code,'RESOURCE_LIMIT');
+ await authorizeProject({...f,maxTurns:1,maxMinutes:1,note:'Explicit remaining-task authorization'});let calls=0;
+ const deps={worker:async req=>{
+  calls++;assert.equal(req.model,'gpt-6.1-terra');assert.equal(req.conversationId,null);
+  assert.equal(await readFile(join(req.directory,'app/value.py'),'utf8'),'VALUE=2\n');
+  await writeFile(join(req.directory,'app/value.py'),'VALUE=3\n');return terminal(req,'Second task complete',ids[2]);
+ }};
+ const result=entry==='work'?await workProject({...f,task:'Change value in two stages'},deps):await sessions.resumeProjectGoal(f,deps);
+ assert.equal(result.status,'completed');assert.equal(calls,1);
+ assert.deepEqual(result.goal.results.map(r=>r.planTaskId),['reason','format']);
+ assert.deepEqual(result.goal.results[0],before.goal.results[0]);
+ assert.equal((await projectStatus(f)).turnsUsed,1);
+ assert.match(await readFile((await exportProject(f)).patchPath,'utf8'),/\+VALUE=3/);
+});
+test('between-task budget renewal still rejects changed accepted workspace before dispatch',async()=>{
+ const f=await stopBetweenTasks();const s=await projectStatus(f);
+ await writeFile(join(s.workspaceDir,'app/value.py'),'VALUE=999\n');
+ await authorizeProject({...f,maxTurns:1,maxMinutes:1,note:'Explicit remaining-task authorization'});
+ await assert.rejects(sessions.resumeProjectGoal(f,{worker:()=>assert.fail('changed workspace must not dispatch')}),/GOAL_WORKSPACE_CHANGED/);
+ assert.equal((await projectStatus(f)).turnsUsed,0);
+});
 test('explicit goal abandonment preserves receipts and edits but never clears UNKNOWN',async()=>{
  assert.equal(typeof sessions.abandonProjectGoal,'function');
  const f=await setup();await workProject({...f,task:'Bad plan'},{worker:async req=>terminal(req,'invalid',ids[0])});

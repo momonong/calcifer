@@ -196,8 +196,11 @@ async function runGoal(stateDir,s,{task,signal,onEvent,resume=false},deps){
   }
   const goal=s.goal;
   if(goal.status==='failed'){
-    if(!goal.resume||!resume&&goal.failedBudgetId===s.budget.id)return{status:'failed',code:goal.code,goal,workspaceDir:s.workspaceDir};
-    budget(s);goal.resumptions??=[];goal.resumptions.push({at:stamp(),fromTaskId:goal.resume.taskId,fromBudgetId:goal.failedBudgetId,budgetId:s.budget.id});goal.status='working';goal.code=null;await put(stateDir,s);
+    // A budget stop before the next dispatch has no failed worker to resume.
+    // Retain the accepted plan/results; the checks below still bind their workspace.
+    const betweenTasks=goal.code==='RESOURCE_LIMIT'&&goal.plan&&s.lastTask?.status==='completed'&&goal.plan.tasks.some(part=>!goal.results.some(r=>r.planTaskId===part.id));
+    if(!goal.resume&&!betweenTasks||!resume&&goal.failedBudgetId===s.budget.id)return{status:'failed',code:goal.code,goal,workspaceDir:s.workspaceDir};
+    budget(s);goal.resumptions??=[];goal.resumptions.push({at:stamp(),fromTaskId:goal.resume?.taskId??null,fromBudgetId:goal.failedBudgetId,budgetId:s.budget.id});goal.status='working';goal.code=null;await put(stateDir,s);
   }
   if(goal.planResponse===null){
     budget(s);const route=selectRoute({routing:s.routing,kind:'plan',allowedProfileIds:s.budget.allowedProfileIds,usedByProfile:s.budget.usedByProfile});
