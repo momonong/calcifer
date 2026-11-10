@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,readFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {mkdtemp,mkdir,writeFile,readFile,readdir,rm} from 'node:fs/promises';
+import {join,dirname} from 'node:path';
 import {digest} from '../src/workspace-tools.mjs';
 import {createProject,authorizeProject,workProject,projectStatus,exportProject,reconcileProject} from '../src/project-session.mjs';
 import {validateRouting} from '../src/project-routing.mjs';
@@ -19,17 +19,77 @@ const profile={schemaVersion:1,name:'Unrelated Python project',sourceFiles:['app
 const ids=['00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003'];
 const task=(id='implement',kind='reasoning',preferredProfileId='astra',dependsOn=[])=>({id,kind,task:'Set app value to two and preserve regression.',preferredProfileId,reason:'Contracts require careful implementation; existing Codex credits are available.',dependsOn,acceptance:['Value equals two and regression passes.']});
 const response=tasks=>JSON.stringify({schemaVersion:1,tasks});
-async function setup(config=routing,maxTurns=2,maxMinutes=1){
+async function setup(config=routing,maxTurns=2,maxMinutes=1,seedContents={}){
  const base=await mkdtemp('/tmp/calcifer-route-test-'),repo=join(base,'source'),stateDir=join(base,'state');
  await mkdir(join(repo,'app'),{recursive:true});await mkdir(join(repo,'tests'));
  await writeFile(join(repo,'app/value.py'),'VALUE=1\n');
  await writeFile(join(repo,'tests/test_value.py'),'import unittest\nfrom app.value import VALUE\nclass T(unittest.TestCase):\n def test_positive(self):self.assertGreater(VALUE,0)\n');
  const text='Frozen project rules.',sources=[],context={text,sources,hash:digest({sources,text})};
- await createProject({stateDir,repo,profile,context,routing:config});
- await authorizeProject({stateDir,maxTurns,maxMinutes,note:'Offline routing acceptance only'});
+ await createProject({stateDir,repo,profile,context,routing:config,seedContents});
+ if(maxTurns!==null)await authorizeProject({stateDir,maxTurns,maxMinutes,note:'Offline routing acceptance only'});
  return {repo,stateDir};
 }
 const terminal=(req,response,id)=>({status:'SUCCESS',conversation_id:id,response,requestedModel:req.model,actualModel:req.model});
+
+test('initial routed one-call authorization is rejected without a durable budget, then two calls can complete',async t=>{
+ for(const maxMinutes of [null,1]){
+  const f=await setup(routing,null);t.after(()=>rm(dirname(f.stateDir),{recursive:true,force:true}));
+  const path=join(f.stateDir,'project.json'),before=await readFile(path);
+  const authorizations=async()=>(await readdir(f.stateDir)).filter(p=>p.startsWith('authorization-')).sort();
+  const originalReceipts=await authorizations();
+  await assert.rejects(authorizeProject({...f,maxTurns:1,maxMinutes,note:'Only one call'}),/GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET/);
+  assert.deepEqual(await readFile(path),before);assert.deepEqual(await authorizations(),originalReceipts);
+  await authorizeProject({...f,maxTurns:2,maxMinutes,note:'Planner and one worker explicitly authorized'});
+  let calls=0;
+  const result=await workProject({...f,task:'Set app value to two'},{worker:async req=>{
+   if(++calls===1)return terminal(req,response([task()]),ids[0]);
+   await writeFile(join(req.directory,'app/value.py'),'VALUE=2\n');return terminal(req,'Done',ids[1]);
+  }});
+  assert.equal(result.status,'completed');assert.equal(calls,2);assert.equal((await projectStatus(f)).turnsUsed,2);
+ }
+});
+async function legacyInitialAuthorization(t,maxMinutes=null){
+ const f=await setup(routing,2,maxMinutes,maxMinutes===1?{'app/value.py':'VALUE=2\n'}:{});t.after(()=>rm(dirname(f.stateDir),{recursive:true,force:true}));
+ const path=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(path,'utf8'));
+ // Reproduce the old serialized state; the current API must never create it.
+ s.budget.maxTurns=1;
+ await writeFile(path,JSON.stringify(s));
+ const receipt=join(f.stateDir,`authorization-${s.budget.id}.json`);
+ await writeFile(receipt,JSON.stringify(s.budget));
+ return {...f,path,receipt};
+}
+test('explicit authorization replaces only an untouched legacy one-call budget and preserves its receipt',async t=>{
+ for(const maxMinutes of [null,1]){
+  const f=await legacyInitialAuthorization(t,maxMinutes);
+  await assert.rejects(workProject({...f,task:'Old one-call goal'},{worker:()=>assert.fail('insufficient budget must not dispatch')}),/GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET/);
+  const before=JSON.parse(await readFile(f.path,'utf8'));
+  const originalReceipt=await readFile(f.receipt),originalWorkspace=(await projectStatus(f)).workspaceManifestHash;
+  await assert.rejects(authorizeProject({...f,maxTurns:1,note:'Still insufficient'}),/GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET/);
+  await authorizeProject({...f,maxTurns:2,maxMinutes,note:'Explicit replacement of unusable initial authorization'});
+  const after=JSON.parse(await readFile(f.path,'utf8'));
+  assert.notEqual(after.budget.id,before.budget.id);assert.equal(after.budget.replacesUnstartedAuthorizationId,before.budget.id);
+  assert.equal(after.budget.used,0);assert.equal(after.budget.maxTurns,2);assert.equal(after.budget.deadlineAt,null);
+  assert.deepEqual(await readFile(f.receipt),originalReceipt);
+  assert.equal((await projectStatus(f)).workspaceManifestHash,originalWorkspace);
+  for(const k of ['goal','lastTask','tasks','conversationId','routing','execution'])assert.deepEqual(after[k],before[k],k);
+ }
+});
+test('legacy one-call recovery refuses dispatch, activity, scope drift or missing authorization proof',async t=>{
+ for(const kind of ['pending','started','task','unknown','scope','receipt','receipt-changed','workspace']){
+  const f=await legacyInitialAuthorization(t),s=JSON.parse(await readFile(f.path,'utf8'));
+  if(kind==='pending')s.pending={phase:'model'};
+  if(kind==='started')s.budget.startedAt=new Date().toISOString();
+  if(kind==='task')s.tasks=1;
+  if(kind==='unknown')s.status='unknown';
+  if(kind==='scope')s.budget.routingHash='0'.repeat(64);
+  if(kind==='receipt')await rm(f.receipt);
+  if(kind==='receipt-changed')await writeFile(f.receipt,JSON.stringify({...s.budget,note:'Changed proof'}));
+  if(kind==='workspace')await writeFile(join(s.workspaceDir,'app/value.py'),'VALUE=99\n');
+  await writeFile(f.path,JSON.stringify(s));const before=await readFile(f.path);
+  await assert.rejects(authorizeProject({...f,maxTurns:2,note:'Must not replace ambiguous or active authorization'}),/AUTHORIZATION_ALREADY_ACTIVE|PROJECT_PENDING|AUTHORIZATION_SCOPE_CHANGED/);
+  assert.deepEqual(await readFile(f.path),before);
+ }
+});
 
 test('goal routes read-only Argon planning to Astra implementation with one shared budget and isolated source',async()=>{
  const f=await setup();let calls=0;
@@ -216,4 +276,143 @@ test('opt-in finite deadline exceeds the old per-call cap but stops later dispat
  }});
  assert.equal(result.status,'failed');assert.equal(result.code,'RESOURCE_LIMIT');
  assert.equal(calls,1);const s=await projectStatus(f);assert.equal(s.maxMinutes,60);assert.ok(s.deadlineAt);assert.equal(s.turnsUsed,1);
+});
+
+async function failBeforeDispatch(){
+ const f=await setup(routing,4,null);let calls=0;
+ const first=await workProject({...f,task:'Keep accepted plan after preflight failure'}, {worker:req=>{
+  if(++calls===1)return terminal(req,response([task()]),ids[0]);
+  throw Object.assign(new Error('CODEX_PREFLIGHT_FAILED'),{dispatched:false,preflight:{exitCode:1,kind:'CONFIG_OR_SANDBOX'}});
+ }});
+ assert.equal(first.status,'failed');assert.equal(first.code,'CODEX_PREFLIGHT_FAILED');
+ assert.equal((await projectStatus(f)).turnsUsed,1);assert.equal((await projectStatus(f)).pending,null);
+ return f;
+}
+async function stripPreflightCheckpoint(f){
+ const path=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(path,'utf8'));
+ delete s.goal.resume;delete s.lastTask.preDispatch;delete s.lastTask.finalManifestHash;delete s.lastTask.checks;
+ await writeFile(path,JSON.stringify(s));
+ const dir=join(f.stateDir,'tasks',s.lastTask.id,'attempt-1');
+ await rm(join(dir,'pre-dispatch-failure.json'),{force:true});
+ await rm(join(f.stateDir,'tasks',s.lastTask.id,'result.json'),{force:true});
+ return {s,dir};
+}
+for(const legacy of [false,true])test(`known pre-dispatch failure resumes accepted plan without another planner (legacy=${legacy})`,async()=>{
+ const f=await failBeforeDispatch();
+ if(legacy)await stripPreflightCheckpoint(f);
+ let resumed=0;
+ const result=await sessions.resumeProjectGoal(f,{worker:async req=>{
+  resumed++;assert.equal(req.model,'gpt-6-astra');assert.equal(req.conversationId,null);
+  await writeFile(join(req.directory,'app/value.py'),'VALUE=2\n');return terminal(req,'Completed after environment repair',ids[1]);
+ }});
+ assert.equal(result.status,'completed');assert.equal(resumed,1);
+ const status=await projectStatus(f);assert.equal(status.turnsUsed,2);assert.equal(status.maxTurns,4);
+ assert.equal(status.goal.assignments[0].profileId,'astra');assert.equal(status.goal.results.length,1);
+});
+for(const corrupt of [false,true])test(`legacy preflight recovery reconciles an interrupted proof write (corrupt=${corrupt})`,async t=>{
+ const f=await failBeforeDispatch();t.after(()=>rm(dirname(f.stateDir),{recursive:true,force:true}));
+ const {s,dir}=await stripPreflightCheckpoint(f),intent=JSON.parse(await readFile(join(dir,'intent.json'),'utf8'));
+ const proof={kind:'legacy-preflight-only',code:s.goal.code,intentHash:corrupt?'0'.repeat(64):digest(intent),manifestHash:intent.beforeHash,at:new Date().toISOString(),previousTask:s.lastTask};
+ const path=join(dir,'pre-dispatch-recovery.json');await writeFile(path,JSON.stringify(proof));const original=await readFile(path);let calls=0;
+ const action=()=>sessions.resumeProjectGoal(f,{worker:req=>{calls++;return terminal(req,'Recovered once after proof write interruption',ids[1]);}});
+ if(corrupt)await assert.rejects(action(),/LEGACY_PREFLIGHT_PROOF_INVALID/);
+ else assert.equal((await action()).status,'completed');
+ assert.equal(calls,corrupt?0:1);assert.deepEqual(await readFile(path),original);
+ assert.equal((await projectStatus(f)).turnsUsed,corrupt?1:2);
+});
+test('pre-dispatch resume rejects workspace drift without spending a worker call',async()=>{
+ const f=await failBeforeDispatch(),before=await projectStatus(f);
+ await writeFile(join(before.workspaceDir,'app/value.py'),'VALUE=999\n');
+ await assert.rejects(sessions.resumeProjectGoal(f,{worker:()=>assert.fail('drift must not dispatch')}),/GOAL_WORKSPACE_CHANGED/);
+ assert.equal((await projectStatus(f)).turnsUsed,1);
+});
+test('legacy preflight recovery refuses any native dispatch artifact',async()=>{
+ const f=await failBeforeDispatch(),path=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(path,'utf8'));
+ delete s.goal.resume;delete s.lastTask.preDispatch;delete s.lastTask.finalManifestHash;delete s.lastTask.checks;
+ await writeFile(path,JSON.stringify(s));
+ const dir=join(f.stateDir,'tasks',s.lastTask.id,'attempt-1');
+ await rm(join(dir,'pre-dispatch-failure.json'),{force:true});
+ await writeFile(join(dir,'dispatch.json'),'{}');
+ const result=await sessions.resumeProjectGoal(f,{worker:()=>assert.fail('ambiguous evidence must not dispatch')});
+ assert.equal(result.status,'failed');assert.equal((await projectStatus(f)).turnsUsed,1);
+});
+
+// Explicit transfer of unused per-profile calls within the same authorization.
+const transferConfig=()=>({...structuredClone(routing),profiles:routing.profiles.map(p=>({...p,maxCalls:p.id==='astra'?2:1}))});
+async function transferFixture(){
+ const f=await setup(transferConfig(),4,null);let calls=0;
+ const result=await workProject({...f,task:'Repair under the original cap'},{worker:async req=>{
+  if(++calls===1)return terminal(req,response([task()]),ids[0]);
+  await writeFile(join(req.directory,'app/value.py'),'VALUE = syntax error\n');
+  return terminal(req,'Correction still needed',ids[1]);
+ }});
+ assert.equal(result.code,'NO_ELIGIBLE_PROFILE');assert.equal(calls,3);
+ return f;
+}
+const readState=async f=>JSON.parse(await readFile(join(f.stateDir,'project.json'),'utf8'));
+test('reallocation preserves spent calls, failed task and original conversation before the fourth dispatch',async()=>{
+ assert.equal(typeof sessions.reallocateProject,'function');
+ const f=await transferFixture(),before=await readState(f);
+ const originalAuthorization=await readFile(join(f.stateDir,`authorization-${before.budget.id}.json`),'utf8');
+ const status=await sessions.reallocateProject({...f,fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Human approved transfer; total remains four.'});
+ const after=await readState(f);
+ for(const k of ['id','used','usedByProfile','maxTurns','maxMinutes','startedAt','deadlineAt','note','authorizedAt','allowedProfileIds'])assert.deepEqual(after.budget[k],before.budget[k],k);
+ for(const k of ['goal','lastTask','lastChecks','conversationId','execution','executionHash','profile','profileHash','pending'])assert.deepEqual(after[k],before[k],k);
+ assert.equal(after.routing.profiles.find(p=>p.id==='astra').maxCalls,3);
+ assert.equal(after.routing.profiles.find(p=>p.id==='terra').maxCalls,0);
+ assert.equal(after.routingHash,digest(after.routing));assert.equal(after.budget.routingHash,after.routingHash);
+ assert.equal(after.budget.reallocations.length,1);
+ const receipt=JSON.parse(await readFile(join(f.stateDir,`reallocation-${after.budget.reallocations[0].id}.json`),'utf8'));
+ assert.equal(digest(receipt),after.budget.reallocations[0].hash);
+ assert.deepEqual(receipt.before.budget,before.budget);assert.deepEqual(receipt.after.routing,after.routing);
+ assert.equal(receipt.conversationId,ids[1]);assert.equal(receipt.goalId,before.goal.id);
+ assert.equal(await readFile(join(f.stateDir,`authorization-${before.budget.id}.json`),'utf8'),originalAuthorization);
+ assert.equal(status.turnsUsed,3);assert.deepEqual(status.resourceAllocation.usedByProfile,{argon:1,astra:2});
+ let resumed=0;
+ const done=await sessions.resumeProjectGoal(f,{worker:async req=>{
+  resumed++;assert.equal(req.model,astra.model);assert.equal(req.conversationId,ids[1]);assert.match(req.prompt,/SyntaxError/);
+  await writeFile(join(req.directory,'app/value.py'),'VALUE=2\n');return terminal(req,'Corrected',ids[1]);
+ }});
+ assert.equal(done.status,'completed');assert.equal(resumed,1);
+ const final=await readState(f);assert.equal(final.budget.used,4);assert.deepEqual(final.budget.usedByProfile,{argon:1,astra:3});
+ await assert.rejects(sessions.reallocateProject({...f,fromProfileId:'astra',toProfileId:'terra',calls:1,note:'Cannot reset exhausted authorization'}),/RESOURCE_LIMIT/);
+ await assert.rejects(workProject({...f,task:'No fifth call'},{worker:()=>assert.fail('must not exceed global cap')}),/RESOURCE_LIMIT/);
+});
+test('reallocation rejects spent calls, unknown or identical profiles and invalid quantities without changing state',async()=>{
+ assert.equal(typeof sessions.reallocateProject,'function');
+ const f=await transferFixture(),before=await readFile(join(f.stateDir,'project.json'),'utf8');
+ const valid={...f,fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Explicit transfer'};
+ for(const change of [{fromProfileId:'astra',toProfileId:'terra'},{calls:2},{calls:0},{calls:true},{calls:1.5},{toProfileId:'missing'},{fromProfileId:'terra',toProfileId:'terra'},{note:''}]){
+  await assert.rejects(sessions.reallocateProject({...valid,...change}),/REALLOCATION/);
+  assert.equal(await readFile(join(f.stateDir,'project.json'),'utf8'),before);
+ }
+});
+test('reallocation never clears an unknown model request',async()=>{
+ assert.equal(typeof sessions.reallocateProject,'function');
+ const f=await setup(transferConfig(),4,null);
+ await workProject({...f,task:'Unknown request'},{worker:()=>{throw new Error('RESULT_UNKNOWN');}});
+ const before=await readFile(join(f.stateDir,'project.json'),'utf8');
+ await assert.rejects(sessions.reallocateProject({...f,fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Explicit transfer'}),/PROJECT_PENDING/);
+ assert.equal(await readFile(join(f.stateDir,'project.json'),'utf8'),before);
+});
+test('reallocation refuses expired or changed-scope authorization and unauthorized targets',async()=>{
+ assert.equal(typeof sessions.reallocateProject,'function');
+ for(const kind of ['expired','scope','unauthorized']){
+  const f=await setup(transferConfig(),4,null),s=await readState(f);
+  if(kind==='expired')s.budget.deadlineAt='2000-01-01T00:00:00.000Z';
+  if(kind==='scope')s.budget.routingHash='0'.repeat(64);
+  if(kind==='unauthorized')s.budget.allowedProfileIds=['argon','terra'];
+  await writeFile(join(f.stateDir,'project.json'),JSON.stringify(s));
+  const before=await readFile(join(f.stateDir,'project.json'),'utf8');
+  await assert.rejects(sessions.reallocateProject({...f,fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Explicit transfer'}),/RESOURCE_LIMIT|AUTHORIZATION_SCOPE_CHANGED|REALLOCATION/);
+  assert.equal(await readFile(join(f.stateDir,'project.json'),'utf8'),before);
+ }
+});
+test('reallocation command receipt makes the same confirmed operation idempotent',async()=>{
+ assert.equal(typeof sessions.reallocateProject,'function');
+ const f=await setup(transferConfig(),4,null),args={...f,fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Confirmed once',operationId:ids[2]};
+ await sessions.reallocateProject(args);const before=await readFile(join(f.stateDir,'project.json'),'utf8');
+ await sessions.reallocateProject(args);
+ assert.equal(await readFile(join(f.stateDir,'project.json'),'utf8'),before);
+ assert.equal((await readState(f)).budget.reallocations.length,1);
 });

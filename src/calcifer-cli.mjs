@@ -21,8 +21,9 @@ const HELP = `Calcifer — 依任務分配模型的專案開發工作階段
   files | result  唯讀列出檔案／核對現有交付物；不測試、不派送模型。
   status | work "需求" | test | diff | export [--output /補丁路徑] | recover
   resume  接續已知失敗的 routed task；abandon --note "原因" 保留紀錄後放棄未完成目標
-  revise --note "具體修訂" 或 --note-file /審閱.md  記錄已完成成果的修訂；不呼叫模型，之後 start 接續。
+  revise [--task-id 計畫任務ID] --note "具體修訂" 或 --note-file /審閱.md  記錄已完成成果的修訂；不呼叫模型，之後 start 接續。
   authorize --turns N [--minutes N] --note "用途" [--yes]
+  reallocate --from ID --to ID --calls N --note "改配授權" [--yes]  轉移未用呼叫，保留總上限與用量。
   calcifer --project 名稱  直接接續指定專案；非終端只顯示狀態。
   register --project 名稱 --state /既有工作階段  登錄自訂位置，不授權或派送模型。
 互動：/start /deliver /help /status /files /test /diff /export /recover /resume /abandon 原因 /authorize N [M] /quit
@@ -32,7 +33,7 @@ const HELP = `Calcifer — 依任務分配模型的專案開發工作階段
 Ctrl-C 取消；結果未知先 recover，不自動重送。init 不授權模型。
 相容舊入口：calcifer thor，等同選擇既有 thor 工作階段。`;
 const OUTPUT_HELP='輸出：--json 只在 stdout 回傳一個 JSON 結果；--jsonl 回傳進度事件與最後結果。\n機器模式不等待互動確認；--yes 仍須已有相應的人類授權。退出碼：0 指令成功、1 操作失敗、2 用法或確認缺失。status 成功不代表目標已完成。';
-const COMMANDS=['help','version','list','repl','init','register','prepare','start','deliver','status','files','result','work','test','diff','export','recover','resume','revise','abandon','authorize'];
+const COMMANDS=['help','version','list','repl','init','register','prepare','start','deliver','status','files','result','work','test','diff','export','recover','resume','revise','abandon','authorize','reallocate'];
 function usage(message) { const e = new Error(message); e.code = 'CLI_USAGE'; return e; }
 export function parseArgs(argv, home = homedir()) {
   const args = [...argv];
@@ -47,7 +48,7 @@ export function parseArgs(argv, home = homedir()) {
       action=a.slice(2);continue;
     }
     if (a.startsWith('--')) {
-      if (!['--state', '--project', '--profile', '--backend', '--model', '--effort', '--routing', '--repo', '--seed', '--output', '--turns', '--minutes', '--note','--task-file','--note-file','--title','--documents'].includes(a)) throw usage(`不支援的選項：${a}`);
+      if (!['--state', '--project', '--profile', '--backend', '--model', '--effort', '--routing', '--repo', '--seed', '--output', '--turns', '--minutes', '--note','--task-file','--note-file','--title','--documents','--from','--to','--calls','--task-id'].includes(a)) throw usage(`不支援的選項：${a}`);
       if (opts[a] !== undefined || !args[i + 1] || args[i + 1].startsWith('--')) throw usage(`選項 ${a} 需要一個值且不可重複。`);
       opts[a] = args[++i];
     } else positional.push(a);
@@ -57,7 +58,7 @@ export function parseArgs(argv, home = homedir()) {
   let command = opts['--help'] || opts['-h'] ? 'help' : action || positional.shift() || (machine?opts['--project']||opts['--state']||legacy?'status':'list':'repl');
   if (!COMMANDS.includes(command)) throw usage(`未知命令：${command}`);
   if(command==='repl'&&machine)command='status';
-  const allowed = { revise:['--note','--note-file'],prepare:['--task-file','--title','--turns','--note','--documents'],start:['--yes'],init:['--repo','--profile','--backend','--model','--effort','--routing',...(legacy?['--seed']:[])],work:['--task-file'],test:['--force'],export:['--output'],abandon:['--note'],authorize:['--turns','--minutes','--note','--yes'] }[command] || [];
+  const allowed = { reallocate:['--from','--to','--calls','--note','--yes'],revise:['--note','--note-file','--task-id'],prepare:['--task-file','--title','--turns','--note','--documents'],start:['--yes'],init:['--repo','--profile','--backend','--model','--effort','--routing',...(legacy?['--seed']:[])],work:['--task-file'],test:['--force'],export:['--output'],abandon:['--note'],authorize:['--turns','--minutes','--note','--yes'] }[command] || [];
   for (const k of Object.keys(opts)) if (!['--state','--project','--help','-h','--json','--jsonl',...allowed].includes(k)) throw usage(`${command} 不接受 ${k}`);
   if (command !== 'work' && positional.length) throw usage(`${command} 不接受額外文字。`);
   const project=opts['--project']||(legacy?'thor':null);
@@ -77,6 +78,8 @@ export function parseArgs(argv, home = homedir()) {
   if(task&&opts['--task-file'])throw usage('需求文字與 --task-file 不可同時提供。');
   if(command==='prepare'&&(!opts['--task-file']||!opts['--title']?.trim()))throw usage('prepare 需要 --task-file 與 --title。');
   if(command==='revise'&&((opts['--note']===undefined)===(opts['--note-file']===undefined)||(opts['--note']!==undefined&&(!opts['--note'].trim()||opts['--note'].length>8000))))throw usage('revise 需要 --note 或 --note-file 擇一，且修訂說明最多 8000 字元。');
+  if(command==='revise'&&opts['--task-id']!==undefined&&(!opts['--task-id'].trim()||opts['--task-id'].length>128))throw usage('--task-id 需要已完成計畫的任務 ID，最多 128 字元。');
+  if(command==='reallocate'&&(!opts['--from']?.trim()||!opts['--to']?.trim()||opts['--from']===opts['--to']||!/^\d+$/.test(opts['--calls']||'')||Number(opts['--calls'])<1||Number(opts['--calls'])>MAX_PROJECT_CALLS||!opts['--note']?.trim()||opts['--note'].length>4096))throw usage('reallocate 改配需要不同的 --from、--to、1 至 32 的 --calls 與 --note；總上限及用量不重設。');
   if(command==='abandon'&&!opts['--note']?.trim())throw usage('abandon 需要 --note 說明放棄原因；不會移除檔案或清除未知請求。');
   if (command === 'authorize'||command==='prepare') {
     for (const [k,max] of [['--turns',MAX_PROJECT_CALLS],...(opts['--minutes']===undefined?[]:[['--minutes',MAX_EXECUTION_MINUTES]])]) if (!/^\d+$/.test(opts[k] || '') || !Number.isSafeInteger(Number(opts[k])) || Number(opts[k]) < 1 || Number(opts[k]) > max) throw usage(`${k} 必須介於 1 與 ${max}。`);
@@ -197,7 +200,7 @@ export async function main(argv = process.argv.slice(2), injected = {}) {
         case 'revise':{
           const note=o['--note-file']?await inputText(o['--note-file'],32000):o['--note'];
           if(!note?.trim()||note.length>8000)throw usage('修訂說明不可空白，且最多 8000 字元。');
-          showStatus(await api.revisePreparedProject({stateDir,note}));
+          showStatus(await api.revisePreparedProject({stateDir,note,...(o['--task-id']===undefined?{}:{taskId:o['--task-id']})}));
           say('已記錄具體修訂並保留舊成果；沒有呼叫模型或重設額度。用 start 接續同一 worker 並交付，或用 resume 只接續工作。');return 0;
         }
         case 'files':{
@@ -233,7 +236,7 @@ export async function main(argv = process.argv.slice(2), injected = {}) {
             if(authorized!==0)return authorized;
             current=await api.projectStatus({stateDir});
           }
-          if(current.maxTurns>prepared.maxTurns||current.authorization!==prepared.note)throw new Error('PREPARED_AUTHORIZATION_MISMATCH');
+          if(current.maxTurns>(prepared.effectiveMaxTurns??prepared.maxTurns)||current.authorization!==prepared.note)throw new Error('PREPARED_AUTHORIZATION_MISMATCH');
           if(current.turnsUsed>=current.maxTurns)throw new Error('RESOURCE_LIMIT');
           const result=await execute({command:current.goal?.status==='failed'?'resume':'work',task:prepared.task});
           if(result!==0)return result;
@@ -258,6 +261,16 @@ export async function main(argv = process.argv.slice(2), injected = {}) {
             say(`文件交付：${result.status}\nWord：${result.docxPath}\nPDF：${result.pdfPath}\n頁數：${result.pages}\n交付目錄：${result.directory}\n仍須核對正式隊伍資料、真實影片與逐頁內容；尚未報名或送件。`);
             return 0;
           }finally{controller=undefined;activePhase=undefined;}
+        }
+        case 'reallocate': {
+          const current=await api.projectStatus({stateDir});
+          say(`改配尚未使用的呼叫：${o['--from']} → ${o['--to']}，${o['--calls']} 次。保留原授權與用量 ${current.turnsUsed}/${current.maxTurns}、期限、會話及資料範圍；不派送模型。`);
+          if(!o['--yes']){
+            if(machine||!input.isTTY||!output.isTTY){const e=usage('非互動環境不會等待確認。請核對改配範圍後明確加入 --yes。');e.reasonCode='CONFIRMATION_REQUIRED';throw e;}
+            if((await question('輸入 yes 才改配：')).trim()!=='yes'){say('未改配。');return 2;}
+          }
+          showStatus(await api.reallocateProject({stateDir,fromProfileId:o['--from'],toProfileId:o['--to'],calls:Number(o['--calls']),note:o['--note']}));
+          say('已保存改配收據；原始授權與已用次數保留。以 start 或 resume 接續原任務。');return 0;
         }
         case 'authorize': {
           const current=await api.projectStatus({stateDir});
@@ -327,6 +340,7 @@ export async function main(argv = process.argv.slice(2), injected = {}) {
   finally { rl?.close(); proc.removeListener('SIGINT',interrupted);proc.removeListener('SIGTERM',interrupted); }
 }
 function errorText(e) {
+  if(e?.message==='GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET')return '路由新目標至少需要 2 次呼叫（規劃 1 次、執行至少 1 次）。請依階段範圍明確授權至少 2 次；已有計畫的接續或修正仍可授權 1 次。';
   if (e?.code === 'ENOENT') return '尚未建立工作階段或必要檔案不存在。請先執行 calcifer init --repo /專案路徑 --profile /設定.json --backend codex或agy --project 名稱，並核對 --state。';
   if (e?.name === 'AbortError') return '工作已取消；結果可能未知，請使用 recover 核對，不會自動重送。';
   const messages={DOCUMENT_SOURCE_ACK_REQUIRED:'原成果缺少來源送入與完整性確認，不能再當作驗收完成交付。請保留原稿並進行具體修正；不會重設額度或自動重送。',PREPARED_GOAL_MISMATCH:'這個工作階段的目標與已準備需求不同；保留原任務，不自動替換。',PREPARED_AUTHORIZATION_MISMATCH:'現有授權與已準備的資源階段不符，不會自動重設或派送。',PREPARED_SCOPE_CHANGED:'已準備的專案或模型範圍有變動，停止啟動並保留原狀態。',DOCUMENT_RENDER_FAILED:'文件轉換失敗，診斷已保留。模型成果仍在；修正環境後用 /deliver 重試，不需重跑模型。',REGISTRY_IDENTITY_CHANGED:'已登錄工作階段的身分已改變，停止開啟；請核對原路徑，不會自動換一份。',REGISTRY_NAME_CONFLICT:'專案名稱已指向其他工作階段；請換一個名稱登錄，不會覆寫原資料。',REGISTRY_STATE_MISSING:'已登錄的工作階段不在原路徑，請核對原檔案；不會另建或重送任務。',AUTHORIZATION_REQUIRED:'尚無本階段模型授權。確認供應商與資料後，以 /authorize 次數 [分鐘] 設定資源上限；省略分鐘表示不設期限。',RESOURCE_LIMIT:'本階段呼叫次數或明確設定的期限已用完。成果已保存；下一階段須由你重新明確授權。',PROJECT_PENDING:'上一請求的結果尚未核對，不會重送。先用 /recover 或 status 查看原始請求。',PROJECT_BUSY:'這個工作區已有另一個操作在執行，請等該操作完成。',AGY_VERSION_CHANGED:'agy 版本已改變，必須先重新核對接入契約，沒有送出新任務。',AUTHORIZATION_ALREADY_ACTIVE:'既有授權仍有效，不會重設已使用次數。',PROJECT_EXISTS:'工作階段已存在。使用相同 --project 或 --state 即可接續。'};if(messages[e?.message])return messages[e.message];

@@ -36,6 +36,12 @@ test('explicit authorization forwards exact limits once',async()=>{
   assert.equal(await main(['thor','authorize','--turns','2','--minutes','3','--note','one task','--yes','--state','/s'],h),0);
   assert.deepEqual(received,{stateDir:'/s',maxTurns:2,maxMinutes:3,note:'one task'});
 });
+test('insufficient initial routing budget explains the minimum without implying authorization',async()=>{
+ const h=harness({authorizeProject:()=>{throw new Error('GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET');}});
+ assert.equal(await main(['authorize','--state','/s','--turns','1','--note','Initial goal','--yes'],h),1);
+ assert.match(h.result().err,/至少.*2.*規劃.*執行/);
+ assert.match(h.result().err,/明確.*授權/);
+});
 test('initialization never authorizes and uses explicit repo/context',async()=>{
   const calls=[]; const h=harness({thorSourceFiles:async repo=>{calls.push(repo);return ['erasebot/a.py'];},loadProjectContext:async()=>({text:'rules',sources:[],hash:'h'}),createProject:async p=>{calls.push(p);return status;},authorizeProject:()=>assert.fail('must not authorize')});
   assert.equal(await main(['thor','init','--repo','/repo','--state','/s'],h),0);
@@ -85,4 +91,21 @@ test('authorization without minutes requests no deadline while preserving explic
  for(const n of ['0','-1','Infinity','1.5','35792'])assert.throws(()=>parseArgs(['authorize','--project','p','--turns','3','--minutes',n,'--note','Invalid']),/minutes/);
  const unconfirmed=harness({authorizeProject:()=>assert.fail('still requires confirmation')});
  assert.equal(await main(['authorize','--project','p','--turns','3','--note','No silent authorization'],unconfirmed),2);
+});
+
+test('reallocation CLI requires a concrete transfer and cannot reset global limits',()=>{
+ const args=['reallocate','--project','p','--from','terra','--to','astra','--calls','1','--note','Approved transfer'];
+ const parsed=parseArgs(args);assert.equal(parsed.command,'reallocate');assert.equal(parsed.opts['--calls'],'1');
+ for(const k of ['--from','--to','--calls','--note']){const bad=[...args],i=bad.indexOf(k);bad.splice(i,2);assert.throws(()=>parseArgs(bad),/reallocate|改配/);}
+ for(const extra of [['--turns','5'],['--minutes','10'],['--routing','/new-policy.json']])assert.throws(()=>parseArgs([...args,...extra]),/不接受/);
+});
+test('reallocation CLI requires confirmation and forwards the bounded transfer only',async()=>{
+ const args=['reallocate','--state','/s','--from','terra','--to','astra','--calls','1','--note','Human-approved transfer','--json'];
+ const blocked=harness({reallocateProject:()=>assert.fail('must not reallocate without confirmation')});
+ assert.equal(await main(args,blocked),2);
+ assert.equal(JSON.parse(blocked.result().out).error.code,'CONFIRMATION_REQUIRED');
+ let received;const confirmed=harness({reallocateProject:async p=>{received=p;return {...status,turnsUsed:3,maxTurns:4,resourceAllocation:{budgetId:'original',usedByProfile:{argon:1,astra:2},reallocations:[]}};}});
+ assert.equal(await main([...args,'--yes'],confirmed),0);
+ assert.deepEqual(received,{stateDir:'/s',fromProfileId:'terra',toProfileId:'astra',calls:1,note:'Human-approved transfer'});
+ const result=JSON.parse(confirmed.result().out);assert.equal(result.data.turnsUsed,3);assert.equal(result.data.maxTurns,4);assert.equal(result.data.resourceAllocation.budgetId,'original');
 });

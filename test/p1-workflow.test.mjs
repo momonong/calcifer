@@ -28,7 +28,40 @@ for(const harness of ['opencode','pi'])for(const caseName of ['t1','t2'])test(`$
 });
 test('host out-of-scope files/command IDs rejected without side effects or authority expansion',async()=>{const f=await freshP1();try{const r=parse(run(f,'pi',join(root,'fixtures/taskboard-cli/provider/deny.json')));assert.equal(r.status,'failed');assert.equal(r.integrationAccepted,false);assert.ok(r.sdk.tools.some(t=>t.code==='TOOL_PATH_NOT_ALLOWED'));assert.ok(r.sdk.tools.some(t=>t.code==='CHECK_NOT_ALLOWED'));assert.equal(await readFile(join(r.runDir,'work/UNRELATED.md'),'utf8'),'Keep this unrelated content unchanged.\n');}finally{await rm(f.base,{recursive:true,force:true});}});
 for(const mode of ['partial','http-error'])test(`${mode} is persistent UNKNOWN; reopen is read-only; new run cannot redispatch`,async()=>{const f=await freshP1();try{const script=join(root,'fixtures/taskboard-cli/provider',mode+'.json'),r=parse(run(f,'opencode',script));assert.equal(r.status,'unknown');assert.equal(r.syntheticModelRequests,1);assert.equal(r.sdk.tools.length,0);const saved=await bytesTree(f.stateRoot);const rr=parse(cli('reopen','--state-root',f.stateRoot,'--run-id',r.runID));assert.equal(rr.status,'unknown');assert.deepEqual(await bytesTree(f.stateRoot),saved);const next=parse(run(f));assert.equal(next.status,'rejected');assert.match(next.code,/LOCKED|UNKNOWN/);assert.equal(next.actualModelRequests,0);const other=parse(cli('run','--repo',f.repo,'--config',f.configPath,'--state-root',join(f.base,'other'),'--goal','Retry','--harness','pi','--profile','mock-loopback','--mock-script',f.mockScript));assert.equal(other.code,'CONFIG_STATE_ROOT_MISMATCH');}finally{await rm(f.base,{recursive:true,force:true});}});
-test('cancel active HTTP request stops new dispatch and closes ephemeral mock',async()=>{const f=await freshP1();try{const args=['src/p1-cli.mjs','run','--repo',f.repo,'--config',f.configPath,'--state-root',f.stateRoot,'--goal','test cancellation','--harness','pi','--profile','mock-loopback','--mock-script',join(root,'fixtures/taskboard-cli/provider/cancel.json')];const p=spawn(node,args,{cwd:root,env:{PATH:process.env.PATH},stdio:['ignore','pipe','pipe']});let stdout='',stderr='';p.stdout.on('data',b=>stdout+=b);p.stderr.on('data',b=>stderr+=b);const start=Date.now();while(Date.now()-start<10000){try{const runs=await readdir(join(f.stateRoot,'runs'));const text=await readFile(join(f.stateRoot,'runs',runs[0],'ledger.jsonl'),'utf8');if(text.includes('"kind":"model"'))break;}catch{}await new Promise(a=>setTimeout(a,25));}p.kill('SIGINT');const code=await new Promise(a=>p.once('close',a));const r=parse({stdout,stderr});assert.notEqual(code,0);assert.equal(r.status,'unknown');assert.equal(r.syntheticModelRequests,1);assert.equal(r.http.closed,true);assert.equal(r.cancellation.userStoppedWaiting,true);assert.equal(r.cancellation.remoteInference,'not_applicable_mock');assert.equal(r.sdk.tools.length,0);}finally{await rm(f.base,{recursive:true,force:true});}});
+test('cancel active HTTP request stops new dispatch and closes ephemeral mock',async()=>{
+  const f=await freshP1();let p,closed;
+  try{
+    const args=['src/p1-cli.mjs','run','--repo',f.repo,'--config',f.configPath,'--state-root',f.stateRoot,'--goal','test cancellation','--harness','pi','--profile','mock-loopback','--mock-script',join(root,'fixtures/taskboard-cli/provider/cancel.json')];
+    p=spawn(node,args,{cwd:root,env:{PATH:process.env.PATH},stdio:['ignore','pipe','pipe']});
+    closed=new Promise((resolve,reject)=>{p.once('close',resolve);p.once('error',reject);});
+    let stdout='',stderr='',received=false;
+    p.stdout.on('data',b=>stdout+=b);p.stderr.on('data',b=>stderr+=b);
+    const start=Date.now();
+    while(Date.now()-start<10000&&p.exitCode===null){
+      try{
+        const runs=await readdir(join(f.stateRoot,'runs'));
+        const text=runs.length?await readFile(join(f.stateRoot,'runs',runs[0],'ledger.jsonl'),'utf8'):'';
+        // Admission intent precedes transport. Cancel only after the mock has received HTTP.
+        received=text.split('\n').filter(Boolean).some(line=>{
+          try{return JSON.parse(line).data?.kind==='mock-http-received';}catch{return false;}
+        });
+        if(received)break;
+      }catch(error){if(error.code!=='ENOENT')throw error;}
+      await new Promise(resolve=>setTimeout(resolve,25));
+    }
+    assert.equal(received,true,'mock must receive HTTP before this active-request cancellation test');
+    p.kill('SIGINT');const code=await closed;
+    const r=parse({stdout,stderr});
+    assert.notEqual(code,0);assert.equal(r.status,'unknown');
+    assert.equal(r.syntheticModelRequests,1);assert.equal(r.http.requests,1);
+    assert.equal(r.http.closed,true);assert.equal(r.cancellation.userStoppedWaiting,true);
+    assert.equal(r.cancellation.remoteInference,'not_applicable_mock');assert.equal(r.sdk.tools.length,0);
+  }finally{
+    if(p&&p.exitCode===null&&p.signalCode===null)p.kill('SIGINT');
+    if(closed)await closed;
+    await rm(f.base,{recursive:true,force:true});
+  }
+});
 test('a passing weakened public test and SDK success cannot replace protected host acceptance',async()=>{const f=await freshP1();try{const r=parse(run(f,'opencode',join(root,'fixtures/taskboard-cli/provider/false-success.json')));assert.equal(r.status,'failed');assert.equal(r.code,'HOST_ACCEPTANCE_FAILED');assert.equal(r.integrationAccepted,false);assert.deepEqual(r.artifacts,[]);assert.equal(r.checks.find(c=>c.checkId==='test').status,'passed');assert.equal(r.checks.at(-1).stage,'final-acceptance');assert.equal(r.checks.at(-1).status,'failed');}finally{await rm(f.base,{recursive:true,force:true});}});
 test('known noisy Unicode check failure remains reopenable without rechecking unchanged snapshot',async()=>{const f=await freshP1();try{f.config.limits.maxOutputBytes=2050;await writeFile(f.configPath,JSON.stringify(f.config));await writeFile(join(f.repo,'test/contract.test.mjs'),"process.stdout.write('中'.repeat(100000));\n");const script=join(f.base,'known-failure-provider.json');await writeFile(script,JSON.stringify({schemaVersion:1,responses:[{calls:[{action:'check',args:{checkId:'test'}}]},{text:'The known project check failed; no edit was made.'}]}));const r=parse(run(f,'pi',script));assert.equal(r.status,'failed');assert.equal(r.code,'PROJECT_CHECK_FAILED');assert.equal(r.sourcePreserved,null);assert.equal(r.checks.length,1);assert.equal(r.checks[0].code,'CHECK_OUTPUT_LIMIT');assert.equal(r.cancellation.toolProcessesClosed,true);assert.equal(r.unknown.length,0);const reread=parse(cli('reopen','--state-root',f.stateRoot,'--run-id',r.runID));assert.equal(reread.status,'failed');assert.equal(reread.reopenedWithoutSDK,true);assert.equal(reread.checks[0].stdoutBase64,r.checks[0].stdoutBase64);}finally{await rm(f.base,{recursive:true,force:true});}});
 

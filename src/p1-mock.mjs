@@ -24,23 +24,30 @@ function streamResponse(response,index){
   return text+frame({},response.calls?'tool_calls':'stop')+'data: [DONE]\n\n';
 }
 // Fixture data only. This server never inspects a goal to choose a patch or tool.
-export async function startP1Mock({script,runID}){
-  const received=[],rejections=[],timers=new Set();let closed=false;
+export async function startP1Mock({script,runID,onRequest}){
+  const received=[],rejections=[],timers=new Set(),pending=new Set();let closed=false,closing=false;
   const server=createServer((request,response)=>{
     if(request.method!=='POST'||request.url!=='/v1/chat/completions'||request.headers['x-calcifer-mock-run']!==runID||request.headers.host!==`127.0.0.1:${server.address().port}`){rejections.push('MOCK_HTTP_IDENTITY_REJECTED');response.writeHead(403);response.end();return;}
     let body=Buffer.alloc(0);request.on('data',part=>{body=Buffer.concat([body,part]);if(body.length>131072){request.destroy();}});
     request.on('end',()=>{
       let payload;try{payload=JSON.parse(body.toString('utf8'));}catch{response.writeHead(400);response.end();return;}
-      const index=received.length;received.push({index,method:request.method,path:request.url,bodyHash:hash(body),body:payload,runID});
+      const index=received.length,entry={index,method:request.method,path:request.url,bodyHash:hash(body),body:payload,runID};received.push(entry);
       const item=script.responses[index];if(!item){response.writeHead(503);response.end();return;}
       const send=()=>{
         if(item.mode==='redirect'){response.writeHead(302,{location:'http://example.invalid/forbidden'});response.end();return;}
         response.writeHead(item.status??200,{'content-type':'text/event-stream','x-calcifer-mock-run':runID,'x-request-id':`mock-${index}`});response.end(streamResponse(item,index));
       };
-      if(item.delayMs){const timer=setTimeout(()=>{timers.delete(timer);send();},item.delayMs);timers.add(timer);response.once('close',()=>{clearTimeout(timer);timers.delete(timer);});}else send();
+      const deliver=async()=>{
+        // Record actual receipt separately from the gate's earlier admission intent.
+        await onRequest?.({index,bodyHash:entry.bodyHash,runID});
+        if(closing||closed||response.destroyed)return;
+        if(item.delayMs){const timer=setTimeout(()=>{timers.delete(timer);send();},item.delayMs);timers.add(timer);response.once('close',()=>{clearTimeout(timer);timers.delete(timer);});}else send();
+      };
+      const delivery=deliver().catch(()=>{rejections.push('MOCK_RECEIPT_FAILED');if(!response.destroyed){response.writeHead(500);response.end();}});
+      pending.add(delivery);delivery.then(()=>pending.delete(delivery));
     });
   });
   await new Promise((accept,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',accept);});
   const endpoint=`http://127.0.0.1:${server.address().port}/v1/chat/completions`;
-  return{endpoint,received,rejections,get closed(){return closed;},async close(){for(const t of timers)clearTimeout(t);timers.clear();server.closeAllConnections();await new Promise((accept,reject)=>server.close(error=>error?reject(error):accept()));closed=true;}};
+  return{endpoint,received,rejections,get closed(){return closed;},async close(){closing=true;for(const t of timers)clearTimeout(t);timers.clear();server.closeAllConnections();await Promise.all([...pending]);await new Promise((accept,reject)=>server.close(error=>error?reject(error):accept()));closed=true;}};
 }

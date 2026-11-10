@@ -8,15 +8,16 @@ import * as prepared from '../src/prepared-project.mjs';
 import {digest} from '../src/workspace-tools.mjs';
 import {main} from '../src/calcifer-cli.mjs';
 
-async function setup(t){
+async function setup(t,reserve=false){
  const base=await mkdtemp('/tmp/calcifer-prepared-code-');t.after(()=>rm(base,{recursive:true,force:true}));
  const repo=join(base,'source'),stateDir=join(base,'state');await mkdir(join(repo,'checks'),{recursive:true});await mkdir(join(repo,'app'));
  await writeFile(join(repo,'app/value.py'),'VALUE = 1\n');await writeFile(join(repo,'spec.md'),'Set VALUE to 2 and deliver usage instructions.');
  await writeFile(join(repo,'checks/test_value.py'),"import unittest\nfrom app.value import VALUE\nfrom pathlib import Path\nclass Acceptance(unittest.TestCase):\n def test_result(self): self.assertEqual(VALUE,2)\n def test_usage(self): self.assertIn('VALUE',Path('docs/usage.md').read_text())\n");
  const profile={schemaVersion:1,name:'Non-Thor coding fixture',sourceFiles:['app/value.py','spec.md','checks/test_value.py'],writeRules:[{root:'app',extensions:['.py']},{root:'docs',extensions:['.md']}],check:{kind:'python-unittest',testDir:'checks',timeoutMs:10000}};
  const routing={schemaVersion:1,planner:'plan',dataClass:'cloud-allowed',maxTasks:1,profiles:[{id:'plan',execution:{backend:'agy',model:'gemini-4-argon-high',version:'1.5.3',effort:'high'},capabilities:['plan'],enabled:true,available:true,maxCalls:1,resource:'included',expiresAt:null},{id:'worker',execution:{backend:'codex',model:'gpt-6-astra',version:'0.167.0-alpha.3.2',effort:'high'},capabilities:['reasoning','implementation','routine'],enabled:true,available:true,maxCalls:4,resource:'existing-credits',expiresAt:null}],preferences:{reasoning:['worker'],implementation:['worker'],routine:['worker']}};
+ if(reserve){routing.profiles[1].maxCalls=2;routing.profiles.push({...structuredClone(routing.profiles[1]),id:'reserve',maxCalls:1,execution:{...routing.profiles[1].execution,model:'gpt-6.1-terra',effort:'medium'}});}
  const ctx={sources:[],text:'Synthetic fixture only. No real models.'};await sessions.createProject({stateDir,repo,profile,routing,context:{...ctx,hash:digest(ctx)}});
- const options={stateDir,title:'Coding fixture',task:'Set VALUE to 2 and write docs/usage.md.',maxTurns:5,note:'Offline injected worker only',documents:null};
+ const options={stateDir,title:'Coding fixture',task:'Set VALUE to 2 and write docs/usage.md.',maxTurns:reserve?4:5,note:'Offline injected worker only',documents:null};
  await prepared.prepareProjectTask(options);return {...options,repo};
 }
 function worker({incomplete=false,failOnce=false,unknown=false}={}){
@@ -40,6 +41,48 @@ function cli(f,w){
  let out='',err='';const api={...sessions,...prepared,workProject:p=>sessions.workProject(p,{worker:w}),resumeProjectGoal:p=>sessions.resumeProjectGoal(p,{worker:w}),deliverProjectDocuments:()=>{throw new Error('UNEXPECTED_DOCUMENT_RENDER');}};
  return {run:args=>main([...args,'--state',f.stateDir],{api,process:new EventEmitter(),stdin:{isTTY:false},stdout:{write:x=>out+=x},stderr:{write:x=>err+=x}}),text:()=>out+err};
 }
+async function legacyPrepared(t,authorized=false){
+ const f=await setup(t),path=join(f.stateDir,'prepared-task.json');
+ if(authorized){
+  await sessions.authorizeProject({...f,maxTurns:2});
+  const statePath=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(statePath,'utf8'));
+  s.budget.maxTurns=1;await writeFile(statePath,JSON.stringify(s));
+  await writeFile(join(f.stateDir,`authorization-${s.budget.id}.json`),JSON.stringify(s.budget));
+ }
+ // Exact shape accepted by the previous prepare API, before the minimum guard.
+ const {hash,...p}=JSON.parse(await readFile(path,'utf8'));p.maxTurns=1;
+ await writeFile(path,JSON.stringify({...p,hash:digest(p)}));
+ return f;
+}
+test('legacy one-call preparation starts after explicit authorization without rewriting frozen inputs',async t=>{
+ for(const authorized of [false,true]){
+  const f=await legacyPrepared(t,authorized),w=worker(),c=cli(f,w),path=join(f.stateDir,'prepared-task.json'),original=await readFile(path);
+  assert.equal(await c.run(['start','--yes']),1);assert.equal(w.counts().calls,0);
+  assert.equal(await c.run(['authorize','--turns','2','--note',f.note,'--yes']),0,c.text());
+  assert.equal(await c.run(['start','--yes']),0,c.text());assert.equal(w.counts().calls,2);
+  assert.equal((await sessions.projectStatus(f)).turnsUsed,2);assert.deepEqual(await readFile(path),original);
+  // A later explicit one-call correction must keep the original migration proof.
+  await sessions.authorizeProject({...f,maxTurns:1});
+  await sessions.revisePreparedProject({...f,note:'Clarify the definition location'});
+  assert.equal(await c.run(['start']),0,c.text());assert.equal(w.counts().calls,3);
+  assert.deepEqual(await readFile(path),original);
+ }
+});
+test('legacy prepared budget correction refuses changed proof or frozen scope before dispatch',async t=>{
+ for(const kind of ['receipt','prepared','reference']){
+  const f=await legacyPrepared(t);await sessions.authorizeProject({...f,maxTurns:2});
+  const statePath=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(statePath,'utf8'));
+  assert.ok(s.preparedBudgetCorrection,'explicit correction must have a durable proof reference');
+  if(kind==='receipt')await writeFile(join(f.stateDir,`authorization-${s.budget.id}.json`),'{}');
+  if(kind==='prepared'){
+   const path=join(f.stateDir,'prepared-task.json'),{hash,...p}=JSON.parse(await readFile(path,'utf8'));
+   p.task='Unapproved replacement task';await writeFile(path,JSON.stringify({...p,hash:digest(p)}));
+  }
+  if(kind==='reference'){s.preparedBudgetCorrection.hash='0'.repeat(64);await writeFile(statePath,JSON.stringify(s));}
+  const w=worker(),c=cli(f,w);assert.equal(await c.run(['start','--yes']),1);assert.equal(w.counts().calls,0);
+  assert.equal((await sessions.projectStatus(f)).turnsUsed,0);
+ }
+});
 test('coding preparation remains unapproved and source-bound without requiring PDF configuration',async t=>{
  const f=await setup(t),s=await sessions.projectStatus(f);assert.equal(s.maxTurns,null);assert.equal((await prepared.readPreparedTask(f)).documents,null);
 });
@@ -82,4 +125,37 @@ test('CLI revision resumes the same worker, preserves previous delivery and spen
  const after=await sessions.projectStatus(f);assert.equal(after.goal.status,'completed');assert.equal(after.turnsUsed,3);assert.equal(after.maxTurns,5);assert.equal(after.goal.id,before.goal.id);
  assert.match(await readFile(join(after.workspaceDir,'docs/usage.md'),'utf8'),/definition is in app\/value.py/);
  assert.deepEqual(await readFile(oldResult),oldBytes);assert.deepEqual(await readFile(exported.patchPath),patchBytes);assert.equal(await readFile(join(f.repo,'app/value.py'),'utf8'),'VALUE = 1\n');
+});
+
+test('prepared reallocation keeps frozen input, resumes original worker via start and survives later authorization',async t=>{
+ const f=await setup(t,true),w=worker({incomplete:true,failOnce:true}),c=cli(f,w);
+ assert.equal(await c.run(['start','--yes']),1);assert.equal(await c.run(['start','--yes']),1);assert.equal(w.counts().calls,3);
+ const before=await sessions.projectStatus(f),frozen=await readFile(join(f.stateDir,'prepared-task.json'));
+ await sessions.reallocateProject({...f,fromProfileId:'reserve',toProfileId:'worker',calls:1,note:'Human approved transfer; no new global calls.'});
+ assert.equal((await prepared.readPreparedTask(f)).task,f.task);
+ let calls=0;const finish=worker(),next=cli(f,req=>{calls++;assert.equal(req.conversationId,before.conversationId);assert.equal(req.model,'gpt-6-astra');return finish(req);});
+ assert.equal(await next.run(['start','--yes']),0,next.text());assert.equal(calls,1);
+ const after=await sessions.projectStatus(f);assert.equal(after.turnsUsed,4);assert.equal(after.maxTurns,4);assert.equal(after.goal.id,before.goal.id);assert.equal(after.goal.status,'completed');
+ assert.deepEqual(await readFile(join(f.stateDir,'prepared-task.json')),frozen);
+ await sessions.authorizeProject({...f,maxTurns:2,note:f.note});
+ assert.equal((await prepared.readPreparedTask(f)).task,f.task);
+ assert.deepEqual(await readFile(join(f.stateDir,'prepared-task.json')),frozen);
+});
+test('prepared reallocation refuses changed receipts or non-resource scope changes',async t=>{
+ for(const mutation of ['receipt','model']){
+  const f=await setup(t,true);await sessions.authorizeProject(f);
+  await sessions.reallocateProject({...f,fromProfileId:'reserve',toProfileId:'worker',calls:1,note:'Only a call transfer'});
+  const path=join(f.stateDir,'project.json'),s=JSON.parse(await readFile(path,'utf8'));
+  const ref=s.budget.reallocations.at(-1),receiptPath=join(f.stateDir,`reallocation-${ref.id}.json`),receipt=JSON.parse(await readFile(receiptPath,'utf8'));
+  if(mutation==='receipt')receipt.note='Modified outside the operation';
+  else{
+   receipt.after.routing.profiles[1].execution.model='gpt-6.1-terra';receipt.after.routingHash=digest(receipt.after.routing);
+   s.routing=receipt.after.routing;s.routingHash=receipt.after.routingHash;s.budget.routingHash=s.routingHash;
+   ref.hash=digest(receipt);
+   if(s.resourceReallocations)s.resourceReallocations.at(-1).hash=ref.hash;
+   await writeFile(path,JSON.stringify(s));
+  }
+  await writeFile(receiptPath,JSON.stringify(receipt));
+  await assert.rejects(prepared.readPreparedTask(f),/PREPARED_SCOPE_CHANGED/);
+ }
 });

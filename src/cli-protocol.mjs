@@ -27,7 +27,7 @@ export function statusView(s){
  return {projectId:s.projectId,projectName:s.projectName,status:s.status,code:s.code,workspaceError:s.workspaceError??null,backend:s.backend,execution:s.execution,model:s.model,workspaceDir:s.workspaceDir,repo:s.repo,
   turnsUsed:s.turnsUsed,maxTurns:s.maxTurns,maxMinutes:s.maxMinutes,deadlineAt:s.deadlineAt,sourceMatches:s.sourceMatches,
   pending:s.pending?{taskId:s.pending.taskId,goalTaskId:s.pending.goalTaskId,phase:s.pending.phase,attempt:s.pending.attempt,startedAt:s.pending.startedAt}:null,
-  cancellation:s.cancellation??null,
+  cancellation:s.cancellation??null,resourceAllocation:s.resourceAllocation??null,
   routing:s.routing?{planner:s.routing.planner,profiles:s.routing.profiles?.map(p=>({id:p.id,execution:p.execution,enabled:p.enabled,available:p.available,maxCalls:p.maxCalls,resource:p.resource,expiresAt:p.expiresAt}))}:null,
   goal:s.goal?{id:s.goal.id,status:s.goal.status,code:s.goal.code,completedAt:s.goal.completedAt,assignments:s.goal.assignments?.map(a=>({taskId:a.taskId,profileId:a.profileId,execution:a.execution,reason:a.plannerReason}))}:null,
   lastTask:s.lastTask?{id:s.lastTask.id,status:s.lastTask.status,code:s.lastTask.code,attempts:s.lastTask.attempts}:null,
