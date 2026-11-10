@@ -35,7 +35,7 @@ export async function runP1({repo,config:inputConfig,stateRoot,goal,harness,prof
     const acceptancePath=join(state.runDir,'host','acceptance.mjs');await writeDurable(acceptancePath,bound.acceptanceContent,true);
     await writeDurable(join(state.runDir,'context.json'),JSON.stringify(bound.context),true);
     if(signal?.aborted)fail('CANCELLED_BEFORE_DISPATCH');
-    mock=await startP1Mock({script:fixture.script,runID:state.metadata.runID});
+    mock=await startP1Mock({script:fixture.script,runID:state.metadata.runID,onRequest:receipt=>safeRecord('mock-http-received',()=>receipt)});
     const nativeFetch=globalThis.fetch;
     gate=new GoalRequestGate({state,signal,endpoint:mock.endpoint,transport:async({payload,signal})=>{
       const response=await nativeFetch(mock.endpoint,{method:'POST',headers:{'content-type':'application/json','x-calcifer-mock-run':state.metadata.runID},body:JSON.stringify(payload),signal,redirect:'manual'});

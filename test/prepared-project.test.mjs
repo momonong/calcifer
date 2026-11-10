@@ -22,6 +22,16 @@ test('preparing a real session preserves zero calls and no authorization',async 
  await authorizeProject({...p,maxMinutes:null});assert.equal((await projectStatus(p)).maxTurns,24);
  await assert.rejects(prepareProjectTask(p),/ALREADY_USED/);
 });
+test('prepared code and document goals reject one call before freezing an unusable task',async t=>{
+ for(const documentsEnabled of [false,true]){
+  const p=await setup(t);if(!documentsEnabled)p.documents=null;
+  const before=await readFile(join(p.stateDir,'project.json'));
+  await assert.rejects(prepareProjectTask({...p,maxTurns:1}),/GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET/);
+  await assert.rejects(readFile(join(p.stateDir,'prepared-task.json')),error=>error.code==='ENOENT');
+  assert.deepEqual(await readFile(join(p.stateDir,'project.json')),before);
+  await prepareProjectTask({...p,maxTurns:2});assert.equal((await readPreparedTask(p)).maxTurns,2);
+ }
+});
 test('prepared task tampering and project replacement are refused',async t=>{
  const p=await setup(t),prepared=await prepareProjectTask(p),file=join(p.stateDir,'prepared-task.json');
  await writeFile(file,JSON.stringify({...prepared,task:'Different goal'}));await assert.rejects(readPreparedTask(p),/CHANGED/);

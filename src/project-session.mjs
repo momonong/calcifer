@@ -75,7 +75,7 @@ async function sourceMatches(s){try{return(await readSourceSnapshot(s.repo,s.sou
 async function statusOf(stateDir,s){
   let files=[],changes=[],workspaceError,workspaceManifestHash;
   try{const values=await snapshots(stateDir,s);workspaceManifestHash=values.after.manifest.hash;files=values.after.manifest.files.map(f=>f.path);changes=values.changes.map(f=>({path:f.path,beforeHash:f.beforeHash,afterHash:f.afterHash}));}catch(error){workspaceError=code(error);}
-  return {projectId:s.projectId,remoteCommandId:s.remoteCommandId??null,cancellation:s.cancellation??null,projectName:profileOf(s).name,backend:executionOf(s).backend,execution:executionOf(s),profile:profileOf(s),routing:s.routing??null,goal:s.goal??null,status:s.pending?'unknown':workspaceError?'failed':s.status,code:workspaceError??s.code,repo:s.repo,workspaceDir:s.workspaceDir,conversationId:s.conversationId,model:s.model,agyVersion:executionOf(s).backend==='agy'?s.agyVersion:undefined,turnsUsed:s.budget?.used??0,maxTurns:s.budget?.maxTurns??null,maxMinutes:s.budget?.maxMinutes??null,deadlineAt:s.budget?.deadlineAt??null,lastTask:s.lastTask,lastResponse:s.lastTask?.response,lastChecks:s.lastChecks,changedFiles:changes,files,workspaceManifestHash,workspaceError:workspaceError??null,sourceMatches:await sourceMatches(s),contextHash:s.contextHash,pending:s.pending,authorization:s.budget?.note??null};
+  return {projectId:s.projectId,remoteCommandId:s.remoteCommandId??null,cancellation:s.cancellation??null,projectName:profileOf(s).name,backend:executionOf(s).backend,execution:executionOf(s),profile:profileOf(s),routing:s.routing??null,goal:s.goal??null,status:s.pending?'unknown':workspaceError?'failed':s.status,code:workspaceError??s.code,repo:s.repo,workspaceDir:s.workspaceDir,conversationId:s.conversationId,model:s.model,agyVersion:executionOf(s).backend==='agy'?s.agyVersion:undefined,turnsUsed:s.budget?.used??0,maxTurns:s.budget?.maxTurns??null,maxMinutes:s.budget?.maxMinutes??null,deadlineAt:s.budget?.deadlineAt??null,lastTask:s.lastTask,lastResponse:s.lastTask?.response,lastChecks:s.lastChecks,changedFiles:changes,files,workspaceManifestHash,workspaceError:workspaceError??null,sourceMatches:await sourceMatches(s),contextHash:s.contextHash,pending:s.pending,authorization:s.budget?.note??null,resourceAllocation:s.budget&&s.routing?{budgetId:s.budget.id,usedByProfile:{...s.budget.usedByProfile},reallocations:s.resourceReallocations??s.budget.reallocations??[],...(s.preparedBudgetCorrection?{preparedBudgetCorrection:s.preparedBudgetCorrection}:{})}:null};
 }
 export async function projectStatus({stateDir}){return statusOf(stateDir,await state(stateDir));}
 
@@ -107,13 +107,76 @@ export async function createProject({stateDir,repo,sourceFiles,seedContents={},c
     await put(stateDir,s);return statusOf(stateDir,s);
   });
 }
+// Explicitly transfer unused calls; never renew the authorization or native session.
+export async function reallocateProject({stateDir,fromProfileId,toProfileId,calls,note,operationId=null}){
+  if(typeof fromProfileId!=='string'||typeof toProfileId!=='string'||fromProfileId===toProfileId||!Number.isSafeInteger(calls)||calls<1||calls>MAX_PROJECT_CALLS||typeof note!=='string'||!note.trim()||note.length>4096)fail('REALLOCATION_INVALID');
+  return withRemoteLock(stateDir,'reallocate',operationId,async()=>{
+    const s=await state(stateDir);settled(s);
+    if(s.status==='unknown')fail('PROJECT_PENDING');
+    if(!s.routing)fail('REALLOCATION_REQUIRES_ROUTING');
+    budget(s);
+    const from=s.routing.profiles.find(p=>p.id===fromProfileId),to=s.routing.profiles.find(p=>p.id===toProfileId);
+    if(!from||!to||![fromProfileId,toProfileId].every(id=>s.budget.allowedProfileIds.includes(id)))fail('REALLOCATION_PROFILE_NOT_AUTHORIZED');
+    if(!to.enabled||!to.available||to.expiresAt&&Date.parse(to.expiresAt)<=Date.now())fail('REALLOCATION_TARGET_UNAVAILABLE');
+    if(calls>from.maxCalls-(s.budget.usedByProfile[fromProfileId]??0)||calls>s.budget.maxTurns-s.budget.used||to.maxCalls+calls>MAX_PROJECT_CALLS)fail('REALLOCATION_EXCEEDS_UNUSED_CALLS');
+    await controls(s);const {after}=await snapshots(stateDir,s);
+    if(s.goal?.resume&&after.manifest.hash!==s.goal.resume.manifestHash)fail('GOAL_WORKSPACE_CHANGED');
+    const before={routing:structuredClone(s.routing),budget:structuredClone(s.budget)},routing=structuredClone(s.routing);
+    routing.profiles.find(p=>p.id===fromProfileId).maxCalls-=calls;
+    routing.profiles.find(p=>p.id===toProfileId).maxCalls+=calls;
+    validateRouting(routing);const routingHash=digest(routing),id=randomUUID(),at=stamp();
+    const receipt={schemaVersion:1,id,at,note,budgetId:s.budget.id,fromProfileId,toProfileId,calls,before,after:{routing,routingHash},goalId:s.goal?.id??null,conversationId:s.conversationId,workspaceManifestHash:after.manifest.hash};
+    // A receipt without the atomic state's matching reference is an unapplied intent.
+    await save(join(stateDir,`reallocation-${id}.json`),receipt,true);
+    s.routing=routing;s.routingHash=routingHash;s.budget.routingHash=routingHash;
+    const reference={id,at,hash:digest(receipt),fromProfileId,toProfileId,calls,note};
+    s.resourceReallocations??=[...(s.budget.reallocations??[])];s.resourceReallocations.push(reference);
+    s.budget.reallocations??=[];s.budget.reallocations.push(reference);
+    await put(stateDir,s);return statusOf(stateDir,s);
+  });
+}
+
+// Old releases could authorize one call before a routed goal needed two. Replace
+// only that untouched state, on an explicit authorize command, retaining proof.
+function initialRoutingIdle(s){return s.routing&&s.status==='ready'&&!s.goal&&!s.lastTask&&s.tasks===0&&!s.conversationId;}
+async function initialWorkspaceUnchanged(stateDir,s){
+  await controls(s);const {after}=await snapshots(stateDir,s);
+  return after.manifest.hash===(s.seedManifest??s.initialManifest).hash;
+}
+async function replaceableInitialAuthorization(stateDir,s){
+  const prior=s.budget;
+  if(!initialRoutingIdle(s)||prior?.maxTurns!==1||!UUID.test(prior.id)||prior.used!==0||prior.startedAt!==null||prior.deadlineAt!==null||Object.keys(prior.usedByProfile??{}).length)return null;
+  budget(s);
+  let receipt;try{receipt=await json(join(stateDir,`authorization-${prior.id}.json`));}catch(error){if(error.code==='ENOENT')return null;throw error;}
+  if(digest(receipt)!==digest(prior))return null;
+  return await initialWorkspaceUnchanged(stateDir,s)?prior.id:null;
+}
+
 export async function authorizeProject({stateDir,maxTurns,maxMinutes=null,note,allowedProfileIds,operationId=null}){
   if(!Number.isSafeInteger(maxTurns)||maxTurns<1||maxTurns>MAX_PROJECT_CALLS||(maxMinutes!==null&&(!Number.isSafeInteger(maxMinutes)||maxMinutes<1||maxMinutes>MAX_EXECUTION_MINUTES))||typeof note!=='string'||!note.trim()||note.length>4096)fail('AUTHORIZATION_INVALID');
   return withRemoteLock(stateDir,'authorize',operationId,async()=>{const s=await state(stateDir);settled(s);
-    if(s.budget&&s.budget.used<s.budget.maxTurns&&(!s.budget.deadlineAt||Date.parse(s.budget.deadlineAt)>Date.now()))fail('AUTHORIZATION_ALREADY_ACTIVE');
+    if(s.routing&&!s.goal?.plan&&maxTurns<2)fail('GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET');
+    let replacesUnstartedAuthorizationId=null;
+    if(s.budget&&s.budget.used<s.budget.maxTurns&&(!s.budget.deadlineAt||Date.parse(s.budget.deadlineAt)>Date.now())){
+      replacesUnstartedAuthorizationId=await replaceableInitialAuthorization(stateDir,s);
+      if(!replacesUnstartedAuthorizationId)fail('AUTHORIZATION_ALREADY_ACTIVE');
+    }
     if(s.routing){allowedProfileIds??=s.routing.profiles.filter(p=>p.enabled).map(p=>p.id);if(!Array.isArray(allowedProfileIds)||!allowedProfileIds.length||new Set(allowedProfileIds).size!==allowedProfileIds.length||allowedProfileIds.some(id=>!s.routing.profiles.some(p=>p.id===id)))fail('ROUTING_AUTHORIZATION_INVALID');}
     else if(allowedProfileIds!==undefined)fail('ROUTING_AUTHORIZATION_INVALID');
-    s.budget={remoteCommandId:operationId,executionHash:digest(executionOf(s)),profileHash:digest(profileOf(s)),...(s.routing?{routingHash:s.routingHash,allowedProfileIds:[...allowedProfileIds],usedByProfile:{}}:{}),id:randomUUID(),authorizedAt:stamp(),note,maxTurns,maxMinutes,used:0,startedAt:null,deadlineAt:null};await save(join(stateDir,`authorization-${s.budget.id}.json`),s.budget,true);await put(stateDir,s);return statusOf(stateDir,s);
+    let preparedBudgetCorrection=null;
+    if(initialRoutingIdle(s)&&!s.preparedBudgetCorrection){
+      const prepared=await(await import('./prepared-project.mjs')).readPreparedTask({stateDir});
+      if(prepared?.maxTurns===1){
+        if(note!==prepared.note)fail('PREPARED_AUTHORIZATION_MISMATCH');
+        if(!replacesUnstartedAuthorizationId&&!await initialWorkspaceUnchanged(stateDir,s))fail('GOAL_WORKSPACE_CHANGED');
+        preparedBudgetCorrection={preparedTaskHash:prepared.hash,previousMaxTurns:1};
+      }
+    }
+    s.resourceReallocations??=[...(s.budget?.reallocations??[])];
+    s.budget={remoteCommandId:operationId,executionHash:digest(executionOf(s)),profileHash:digest(profileOf(s)),...(s.routing?{routingHash:s.routingHash,allowedProfileIds:[...allowedProfileIds],usedByProfile:{}}:{}),...(replacesUnstartedAuthorizationId?{replacesUnstartedAuthorizationId}:{}),...(preparedBudgetCorrection?{preparedBudgetCorrection}:{}),id:randomUUID(),authorizedAt:stamp(),note,maxTurns,maxMinutes,used:0,startedAt:null,deadlineAt:null};
+    await save(join(stateDir,`authorization-${s.budget.id}.json`),s.budget,true);
+    if(preparedBudgetCorrection)s.preparedBudgetCorrection={authorizationId:s.budget.id,hash:digest(s.budget)};
+    await put(stateDir,s);return statusOf(stateDir,s);
   });
 }
 function budget(s){if(s.routing?s.budget?.routingHash&&s.budget.routingHash!==s.routingHash:s.budget?.executionHash&&s.budget.executionHash!==digest(executionOf(s)))fail('AUTHORIZATION_SCOPE_CHANGED');if(s.budget?.profileHash&&s.budget.profileHash!==digest(profileOf(s)))fail('AUTHORIZATION_SCOPE_CHANGED');if(!s.budget)fail('AUTHORIZATION_REQUIRED');if(s.budget.used>=s.budget.maxTurns||s.budget.deadlineAt&&Date.parse(s.budget.deadlineAt)<=Date.now())fail('RESOURCE_LIMIT');}
@@ -176,6 +239,34 @@ async function activateRoute(stateDir,s,route){
 function failedWorkerCheckpoint(s){
   return{planTaskId:s.lastTask.goalTaskId,taskId:s.lastTask.id,execution:{...executionOf(s)},conversationId:s.conversationId,manifestHash:s.lastTask.finalManifestHash,checks:s.lastTask.checks.map(c=>({stage:c.stage,status:c.status,code:c.code,stdout:c.stdout?.slice(0,12000),stderr:c.stderr?.slice(0,12000)}))};
 }
+// Upgrade only a legacy, first-attempt Codex preflight-only failure. The old
+// adapter set dispatched=false for this code; native artifacts or changed input
+// invalidate this narrow recovery proof. Never infer unsent from missing files alone.
+async function restoreLegacyPreflightCheckpoint(stateDir,s){
+  const t=s.lastTask,g=s.goal;
+  if(g?.resume||g?.code!=='CODEX_PREFLIGHT_FAILED'||s.code!==g.code||s.pending||t?.kind!=='work'||t.status!=='failed'||t.attempts!==1||!t.goalTaskId||s.conversationId!==null||t.preDispatch||t.finalManifestHash)return;
+  if(!/^task-\d{4,}-[0-9a-f]{8}$/.test(t.id))fail('PROJECT_STATE_INVALID');
+  const evidenceDir=join(stateDir,'tasks',t.id,'attempt-1');await secureRoot(evidenceDir);
+  const entries=(await readdir(evidenceDir)).sort().join(',');
+  if(!['before,intent.json','before,intent.json,pre-dispatch-recovery.json'].includes(entries))return;
+  const intent=await json(join(evidenceDir,'intent.json'));
+  if(intent.taskId!==t.id||intent.kind!=='work'||intent.goalTaskId!==t.goalTaskId||intent.attempt!==1||intent.conversationId!==null||intent.phase!=='model'||intent.budgetId!==g.failedBudgetId||digest(intent.route)!==digest(t.route)||intent.backend!==executionOf(s).backend||intent.model!==s.model||intent.effort!==executionOf(s).effort)return;
+  await controls(s);
+  const before=await readProjectSnapshot(join(evidenceDir,'before')),{after}=await snapshots(stateDir,s);
+  const acceptedHash=g.results.at(-1)?.manifestHash??g.planManifestHash;
+  if(before.manifest.hash!==intent.beforeHash||after.manifest.hash!==intent.beforeHash||acceptedHash!==intent.beforeHash)fail('GOAL_WORKSPACE_CHANGED');
+  let proof;
+  if(entries.endsWith(',pre-dispatch-recovery.json')){
+    proof=await json(join(evidenceDir,'pre-dispatch-recovery.json'));
+    if(proof.kind!=='legacy-preflight-only'||proof.code!==g.code||proof.intentHash!==digest(intent)||proof.manifestHash!==intent.beforeHash||digest(proof.previousTask)!==digest(t))fail('LEGACY_PREFLIGHT_PROOF_INVALID');
+  }else{
+    proof={kind:'legacy-preflight-only',code:g.code,intentHash:digest(intent),manifestHash:intent.beforeHash,at:stamp(),previousTask:structuredClone(t)};
+    await save(join(evidenceDir,'pre-dispatch-recovery.json'),proof,true);
+  }
+  t.preDispatch={kind:proof.kind,code:g.code,manifestHash:intent.beforeHash};t.finalManifestHash=intent.beforeHash;
+  t.checks=[{stage:'preflight',status:'failed',code:g.code}];
+  g.resume=failedWorkerCheckpoint(s);await put(stateDir,s);
+}
 async function stopGoal(stateDir,s,result){
   const goal=s.goal;goal.status=result.status;goal.code=result.code;goal.failedBudgetId=s.budget.id;
   if(result.status==='failed'&&s.lastTask?.kind==='work'&&s.lastTask.goalTaskId&&s.lastTask.finalManifestHash&&s.lastTask.status==='failed'&&['CHECKS_FAILED','RESOURCE_LIMIT'].includes(result.code))goal.resume=failedWorkerCheckpoint(s);
@@ -196,6 +287,7 @@ async function runGoal(stateDir,s,{task,signal,onEvent,resume=false},deps){
   }
   const goal=s.goal;
   if(goal.status==='failed'){
+    if(resume)await restoreLegacyPreflightCheckpoint(stateDir,s);
     // A budget stop before the next dispatch has no failed worker to resume.
     // Retain the accepted plan/results; the checks below still bind their workspace.
     const betweenTasks=goal.code==='RESOURCE_LIMIT'&&goal.plan&&s.lastTask?.status==='completed'&&goal.plan.tasks.some(part=>!goal.results.some(r=>r.planTaskId===part.id));
@@ -263,23 +355,48 @@ export async function resumeProjectGoal({stateDir,signal,onEvent,operationId=nul
   if(operationId!==null&&!UUID.test(operationId))fail('PROJECT_OPERATION_ID_INVALID');
   return withRemoteLock(stateDir,'resume',operationId,async()=>{const s=await state(stateDir);settled(s);if(!s.routing||!s.goal)fail('NO_ROUTED_GOAL');s.remoteCommandId=operationId;await put(stateDir,s);return runGoal(stateDir,s,{task:s.goal.task,signal,onEvent,resume:true},deps);});
 }
-// A concrete acceptance correction reopens the last assigned worker, never its planner
-// or budget. Original completed receipts are archived intact before state changes.
-export async function revisePreparedProject({stateDir,note}){
+// Restore only a completed worker whose durable dispatch and terminal receipts
+// agree with the accepted goal result. Selection never creates a new conversation.
+async function revisionEvidence(stateDir,selected,assignment){
+ try{
+  if(!/^task-\d{4,}-[0-9a-f]{8}$/.test(selected.taskId)||digest(selected.execution)!==digest(assignment.execution))fail('REVISION_EVIDENCE_INVALID');
+  const taskDir=join(stateDir,'tasks',selected.taskId);await secureRoot(taskDir);
+  const task=await json(join(taskDir,'result.json'));
+  if(task.id!==selected.taskId||task.kind!=='work'||task.status!=='completed'||task.goalTaskId!==selected.planTaskId||task.route?.profileId!==assignment.profileId||digest(task.execution)!==digest(assignment.execution)||task.finalManifestHash!==selected.manifestHash||task.response!==selected.response||!Number.isSafeInteger(task.attempts)||task.attempts<1)fail('REVISION_EVIDENCE_INVALID');
+  const dir=join(taskDir,`attempt-${task.attempts}`);await secureRoot(dir);
+  const intent=await json(join(dir,'intent.json')),terminal=await json(join(dir,'accepted-terminal.json'));
+  if(intent.taskId!==task.id||intent.kind!=='work'||intent.goalTaskId!==selected.planTaskId||intent.attempt!==task.attempts||intent.backend!==task.execution.backend||intent.model!==task.execution.model||intent.effort!==task.execution.effort||digest(intent.route)!==digest(task.route))fail('REVISION_EVIDENCE_INVALID');
+  if(terminal.status!=='SUCCESS'||!UUID.test(terminal.conversation_id)||terminal.response!==task.response||terminal.requestedModel&&terminal.requestedModel!==task.execution.model||terminal.actualModel&&terminal.actualModel!==task.execution.model||terminal.requestedEffort&&terminal.requestedEffort!==task.execution.effort||intent.conversationId&&intent.conversationId!==terminal.conversation_id)fail('REVISION_EVIDENCE_INVALID');
+  return{task,conversationId:terminal.conversation_id,evidenceHash:digest({task,intent,terminal})};
+ }catch{fail('REVISION_EVIDENCE_INVALID');}
+}
+// A concrete acceptance correction reopens the selected completed worker (last
+// by default), never its planner or budget. Archive receipts before mutation.
+export async function revisePreparedProject({stateDir,note,taskId=null}){
  if(typeof note!=='string'||!note.trim()||note.length>8000)fail('REVISION_REASON_REQUIRED');
+ if(taskId!==null&&(typeof taskId!=='string'||!taskId.trim()||taskId.length>128))fail('REVISION_TASK_MISMATCH');
  return withLock(stateDir,async()=>{
-  const s=await state(stateDir);settled(s);budget(s);await controls(s);
+  const s=await state(stateDir);settled(s);if(s.status==='unknown')fail('PROJECT_PENDING');budget(s);await controls(s);
   const prepared=await(await import('./prepared-project.mjs')).readPreparedTask({stateDir});
   if(!prepared||s.goal?.status!=='completed'||s.goal.task!==prepared.task)fail('REVISION_REQUIRES_COMPLETED_PREPARED_GOAL');
   const last=s.goal.results.at(-1);if(!last||s.lastTask.id!==last.taskId||s.lastTask.kind!=='work')fail('REVISION_TASK_MISMATCH');
+  if(s.goal.planHash!==digest({plan:s.goal.plan,assignments:s.goal.assignments}))fail('GOAL_PLAN_CHANGED');
+  const selected=taskId===null?last:s.goal.results.find(r=>r.planTaskId===taskId);
+  if(!selected)fail('REVISION_TASK_MISMATCH');
   const {after}=await snapshots(stateDir,s);if(after.manifest.hash!==s.goal.finalManifestHash)fail('GOAL_WORKSPACE_CHANGED');
-  const assignment=s.goal.assignments.find(a=>a.taskId===last.planTaskId);
+  const assignment=s.goal.assignments.find(a=>a.taskId===selected.planTaskId);
+  if(!assignment)fail('REVISION_TASK_MISMATCH');
   const route=selectRoute({routing:s.routing,kind:assignment.kind,preferredProfileId:assignment.profileId,allowedProfileIds:s.budget.allowedProfileIds,usedByProfile:s.budget.usedByProfile});
   if(route.profileId!==assignment.profileId)fail('ASSIGNED_MODEL_RESOURCE_LIMIT');
-  const id=randomUUID(),at=stamp();await save(join(stateDir,`revision-${id}.json`),{id,at,note,budgetId:s.budget.id,turnsUsed:s.budget.used,goal:s.goal,lastTask:s.lastTask},true);
-  s.goal.revisions??=[];s.goal.revisions.push({id,at,note,previousFinalManifestHash:s.goal.finalManifestHash,previousTaskId:last.taskId});
-  s.lastTask={...s.lastTask,status:'failed',checks:[{stage:'acceptance-review',status:'failed',code:'ACCEPTANCE_REVIEW_FAILED',stderr:note}]};
-  s.goal.results.pop();s.goal.resume=failedWorkerCheckpoint(s);s.goal.status='failed';s.goal.code='ACCEPTANCE_REVIEW_FAILED';s.goal.failedBudgetId=s.budget.id;s.status='ready';s.code=null;
+  const evidence=await revisionEvidence(stateDir,selected,assignment);
+  const id=randomUUID(),at=stamp();await save(join(stateDir,`revision-${id}.json`),{id,at,note,budgetId:s.budget.id,turnsUsed:s.budget.used,goal:s.goal,lastTask:s.lastTask,previousExecution:executionOf(s),previousConversationId:s.conversationId,selectedTask:evidence.task,conversationId:evidence.conversationId,evidenceHash:evidence.evidenceHash},true);
+  s.goal.revisions??=[];s.goal.revisions.push({id,at,note,previousFinalManifestHash:s.goal.finalManifestHash,previousTaskId:selected.taskId,planTaskId:selected.planTaskId,evidenceHash:evidence.evidenceHash});
+  s.execution={...assignment.execution};s.executionHash=digest(s.execution);s.model=s.execution.model;s.conversationId=evidence.conversationId;
+  if(s.execution.backend==='agy')s.agyVersion=s.execution.version;
+  // The selected task's old receipt stays intact; its correction begins from the
+  // current accepted workspace, including all later completed tasks.
+  s.lastTask={...evidence.task,finalManifestHash:after.manifest.hash,status:'failed',checks:[{stage:'acceptance-review',status:'failed',code:'ACCEPTANCE_REVIEW_FAILED',stderr:note}]};
+  s.goal.results=s.goal.results.filter(r=>r.planTaskId!==selected.planTaskId);s.goal.resume=failedWorkerCheckpoint(s);s.goal.status='failed';s.goal.code='ACCEPTANCE_REVIEW_FAILED';s.goal.failedBudgetId=s.budget.id;s.status='ready';s.code=null;
   await put(stateDir,s);return statusOf(stateDir,s);
  });
 }
@@ -332,7 +449,20 @@ async function executeTask(stateDir,s,{task,signal,onEvent,kind='work',route=nul
         if(terminal&&s.pending?.phase==='checks'){
           s.pending=null;s.status='failed';s.code=code(error);s.lastTask.status='failed';s.lastTask.code=s.code;await put(stateDir,s);return{status:'failed',code:s.code,taskId,attempts:attempt,response:terminal.response,workspaceDir:s.workspaceDir};
         }
-        if(error.dispatched===false){s.budget.used--;if(route)s.budget.usedByProfile[route.profileId]--;s.pending=null;s.status='failed';s.code=code(error);s.lastTask.status='failed';await put(stateDir,s);return{status:'failed',code:s.code,taskId,workspaceDir:s.workspaceDir};}
+        if(error.dispatched===false){
+          const after=await readProjectSnapshot(s.workspaceDir),unchanged=after.manifest.hash===before.manifest.hash;
+          const receipt={schemaVersion:1,taskId,attempt,dispatched:false,code:code(error),beforeHash:before.manifest.hash,afterHash:after.manifest.hash,workspaceUnchanged:unchanged,conversationId:s.conversationId,execution:{...executionOf(s)},preflight:error.preflight??null,at:stamp()};
+          await save(join(evidenceDir,'pre-dispatch-failure.json'),receipt,true);
+          s.budget.used--;if(route)s.budget.usedByProfile[route.profileId]--;
+          s.pending=null;s.status='failed';s.code=unchanged?code(error):'PRE_DISPATCH_WORKSPACE_CHANGED';
+          s.lastTask.status='failed';s.lastTask.code=s.code;s.lastTask.preDispatch=receipt;
+          const prior=s.goal?.resume;
+          const correctionChecks=prior?.planTaskId===goalTaskId&&prior.conversationId===s.conversationId&&digest(prior.execution)===digest(executionOf(s))?prior.checks.filter(c=>c.stage!=='preflight'):[];
+          s.lastTask.finalManifestHash=after.manifest.hash;s.lastTask.checks=[...correctionChecks,{stage:'preflight',status:'failed',code:s.code}];
+          if(s.goal&&goalTaskId&&kind==='work')s.goal.resume=unchanged?failedWorkerCheckpoint(s):null;
+          await save(join(taskDir,'result.json'),s.lastTask);await put(stateDir,s);
+          return{status:'failed',code:s.code,taskId,workspaceDir:s.workspaceDir};
+        }
         s.status='unknown';s.code=code(error);s.lastTask.status='unknown';
         s.cancellation={userStoppedWaiting:signal?.aborted===true,localProcess: error.receipt?.process??null,streamDrained:error.receipt?.process?.closed===true,toolsStopped:'unknown',remoteInference:'unknown'};
         await put(stateDir,s);return{status:'unknown',code:s.code,taskId,attempts:attempt,workspaceDir:s.workspaceDir,cancellation:s.cancellation};

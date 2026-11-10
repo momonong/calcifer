@@ -88,7 +88,7 @@ calcifer --project my-project
 
 ## 建立依任務選模的專案
 
-在 Calcifer checkout 下執行；`init` 不呼叫模型。執行端需 Linux、`/usr/bin/python3.12`、flock／timeout／unshare／bwrap 及 `/usr/bin/git`。公開 init 的 Playbook loader 固定查執行帳號 `~/.codex/AGENTS.md` 的 guides-commit，以及 `~/.codex/agent-playbook/versions/80a550a2f2efc1c3790935b2b806b1bf0971cdbe/` 的 `SOURCE_COMMIT` 和 `guides/{engineering,external-execution,model-selection,collaboration}.md`；目前不自動解析其他 CODEX_HOME。核心、快照 commit 與四檔都須存在且一致。WSL 是另一個環境，不能假定 Windows 的規則與登入已在其中可用。缺少時依裝置同步流程補明列的指南，避免重複 init。
+在 Calcifer checkout 下執行；`init` 不呼叫模型。執行端需 Linux、`/usr/bin/python3.12`、flock／timeout／unshare／bwrap 及 `/usr/bin/git`。公開 init 的 Playbook loader 讀取執行帳號 `~/.codex/AGENTS.md` 中唯一、完整的 guides-commit，並依該 pin 查 `~/.codex/agent-playbook/versions/<guides-commit>/` 的 `SOURCE_COMMIT` 和 `guides/{engineering,external-execution,model-selection,collaboration}.md`；目前不自動解析其他 CODEX_HOME。核心、快照 commit 與四檔都須存在且一致；缺少、重複 pin 或不一致時拒絕，不改用 main／latest。此修正的 WSL 驗證見 [本機驗證紀錄](validation-wsl-2026-11-09.md)。WSL 是另一個環境，不能假定 Windows 的規則與登入已在其中可用。缺少時依裝置同步流程補明列的指南，避免重複 init。
 
 ```sh
 calcifer init --project taskboard-routed \
@@ -130,6 +130,12 @@ calcifer export --project taskboard-routed
 預設不設整個目標或單次模型工作的執行期限；只要仍在授權範圍內，就持續推進到完成條件滿足。省略 `--minutes` 即使用此模式，狀態顯示「不設執行期限」。需要有期限的實測時，明確加上 `--minutes 15`；該期限從首次派送起算。既有授權保留原本的期限，不因程式升級而自動放寬。
 
 規劃、工作及修正仍共用明確授權的呼叫次數，每階段目前最多 32 次 CLI 工作呼叫；2 次適合一次規劃加一次實作。取消時間限制不會自動增加額度、兌換資源或開啟新的工作階段。這不是原始 API 生成次數或硬性金額上限；模型內部推理、工具往返與 native transport retry 都可能產生多次請求。
+
+尚無計畫的 routed 專案在 `authorize` 與 `prepare` 階段就要求至少 2 次；不足時回報 `GOAL_REQUIRES_PLANNER_AND_WORKER_BUDGET`，不保存不足的授權或新準備任務。已有計畫的剩餘任務、已完成任務的具體修訂，以及一般單模型工作仍可明確授權 1 次；不會自動加額度。
+
+若舊版已接受初始 1 次、`work` 又在派送前因額度不足停止，可在同一工作階段重新執行明確的 `authorize --turns 2 --note "本次修正授權範圍"`（非互動操作仍須 `--yes`）。僅在原授權收據一致、未開始任何 task／會話／計畫、用量為 0、控制檔及快照未變且無 pending 時接受；新收據以 `replacesUnstartedAuthorizationId` 連回原授權，舊檔案保留。已開始、有效的其他授權或 UNKNOWN 不適用此恢復，也不會由 `start` 自動增額。
+
+舊版若已凍結 `prepared-task.json` 的 1 次上限，也用明確的 `authorize --turns 2` 修正，`--note` 須沿用該任務原本完整的授權範圍。新授權會綁定原 prepared hash，保存可核對的修正收據；原 prepared 檔案不改寫。之後 `start` 才接受此明確批准的有效上限，並照常檢查供應商、資料與來源範圍。沒有修正收據、收據遭更動或任務內容不同，仍拒絕接續；後續單次修訂也保留此證據鏈。
 
 測試程序、CLI 版本／登入檢查與取消後的本機程序收尾仍有各自的逾時保護。這些逾時不會因模型正常工作超過 15 或 20 分鐘而中止整個目標。Ctrl-C 仍可停止等待；遠端結果未知時仍需核對原請求。CLI／供應商自身的連線與服務限制不由卡西法消除。
 
@@ -208,3 +214,32 @@ prepared worker 必須明確回報 complete／incomplete、輸入 hash 及已核
 `prepareProjectTask` 支援明確的 `documents: null`，供一般程式目標使用；這種模式必須有任務路由。它沿用相同的來源全文、固定 Playbook、完成回報、主機測試與 UNKNOWN 保護。`start` 完成後直接交付經驗證的 patch，`deliver` 重新匯出時不呼叫模型，不要求 Thor 或 Word/PDF 設定。文件目標仍使用既有 documents 物件，舊工作階段不遷移。
 
 原目標對話可依已確認資源操作相同 CLI／公開主控介面，跟進程序、讀取失敗收據並接續原 worker；這不需要新常駐服務或另開聊天。新的資料／寫入範圍仍須匹配階段授權，前一階段剩餘次數不能挪用。主機檢查通過只證明指定驗收，交付 patch 不等於套用、合併、實機成功或使用者接受。
+
+
+### 同一授權內改配未使用呼叫
+
+在使用者明確批准改配後，可用既有 session 的 `reallocate` 入口轉移尚未使用的 profile 呼叫，不用另建專案或重設授權：
+
+```sh
+calcifer reallocate --project example --from terra-worker --to astra-worker --calls 1 --note "已確認轉移 1 次，總上限不變" --yes --json
+```
+
+此命令本身不呼叫模型。兩個 profile 都必須屬於目前授權，轉出數量不得包含已用配額或超出全域剩餘量；轉出後的 profile `maxCalls` 可以為 0。原模型、深度、資料類別、偏好、全域上限、期限、已用次數、budget ID、任務與 native conversation 都保留。只有兩個 profile 的呼叫上限及其 routing hash 改變。未知／待核對請求、過期或範圍已變更的授權會被拒絕。
+
+每次改配先保存 `reallocation-<id>.json`，包含理由、前後配置、原 budget、工作區雜湊與會話身分，再原子更新原 budget 的 `reallocations` 參照及收據雜湊。原始 `authorization-<id>.json` 不覆寫；單獨存在但沒有目前狀態參照的改配收據只是未套用意圖，不能當作已改配。`status --json` 的 `resourceAllocation` 提供原 budget ID、分模型已用次數及改配參照。
+
+非互動命令仍須 `--yes`，且該旗標只代表呼叫端已有相應人類授權。不能用 `reallocate` 提高總上限、延長期限、改模型或增加供應商；這些操作不屬於此入口。改配完成後用 `start` 或 `resume` 接續原會話；框架檢查與隔離不變。遠端 command API 尚未新增這個命令。
+
+已凍結的 `prepared-task.json` 不因改配而改寫。讀取時必須從目前配置沿狀態參照的改配收據向前核對 SHA256 與完整配置差異，只允許對應的兩個 `maxCalls` 轉移；任務、專案、檔案 scope、模型或其他路由欄位改變仍拒絕啟動。改配參照保留於專案歷史，之後另行授權新階段也不會使原凍結任務失去追溯。
+
+
+### 修訂較早完成的任務
+
+`calcifer revise --project <name> --task-id <plan-task-id> --note-file /absolute/review.md`
+可在完成的 prepared goal 中選擇較早任務；省略 `--task-id` 維持修訂最後一項。
+修訂會核對原任務、派送意圖與原生完成收據，還原同一模型及 conversation，
+以目前已驗證工作區為起點，保留其他完成任務、原始收據與舊交付物。
+revision 收據保存修訂前狀態及所選任務的證據雜湊；`revise` 本身不花模型次數，
+後續 `start`／`resume` 才消耗原授權與所選模型的剩餘次數。
+未知結果、工作區漂移、身份不符或所選模型配額耗盡仍會拒絕，不重新規劃或切換模型。
+這項操作要求具體驗收修正；不能據此擴大原任務、資料範圍或資源授權。
