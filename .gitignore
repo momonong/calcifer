@@ -8,3 +8,7 @@ evidence/*
 .env
 .env.*
 !*.example
+/spikes/.runtime-phase0-cli/
+/spikes/.runtime-wisp-hermes/
+/wisp/__pycache__/
+/wisp/.taste-skill/
