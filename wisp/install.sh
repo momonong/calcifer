@@ -10,7 +10,7 @@ command -v curl >/dev/null || { printf '%s\n' 'curl is required.' >&2; exit 1; }
 wisp_stage="$(mktemp -d -t wisp-install-XXXXXXXX)"
 trap 'rm -rf -- "$wisp_stage"' EXIT
 curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
-  'https://momonong.me/sites/wisp/releases/0.1.3/wisp-0.1.3.zip' -o "$wisp_stage/wisp.zip"
+  'https://momonong.me/sites/wisp/releases/0.1.4/wisp-0.1.4.zip' -o "$wisp_stage/wisp.zip"
 python3 - "$wisp_stage" '__ZIP_SHA256__' <<'PY'
 import hashlib, pathlib, sys, zipfile
 root=pathlib.Path(sys.argv[1]); raw=(root/'wisp.zip').read_bytes()

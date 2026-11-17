@@ -23,7 +23,7 @@ class InstallTests(unittest.TestCase):
         for name in ['launcher.py','install.py']:
             if (ROOT/name).exists(): shutil.copyfile(ROOT/name,self.source/name)
         files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in self.source.iterdir()}
-        (self.source/'manifest.json').write_text(json.dumps({'version':'0.1.3','files':files}))
+        (self.source/'manifest.json').write_text(json.dumps({'version':'0.1.4','files':files}))
         self.engine=self.root/'hermes'; self.engine.write_text('#!/bin/sh\nprintf "Hermes v0.23.1\\n"\n'); self.engine.chmod(0o700)
 
     def install(self,*extra):
@@ -100,6 +100,18 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(before,(self.config.read_bytes(),(self.prefix/'hermes/config.yaml').read_bytes()))
 
+    def test_reinstall_preserves_optional_desktop_configuration(self):
+        self.assertEqual(self.install().returncode,0)
+        config=json.loads(self.config.read_text())
+        config['desktop']={'executable':str(self.root/'electron'),'app':str(self.root/'app'),
+                           'hermes_root':str(self.root/'engine'),'cwd':str(self.root),'version':'0.23.2'}
+        self.config.write_text(json.dumps(config))
+        before=self.config.read_bytes()
+        self.engine.write_text('#!/bin/sh\nexit 73\n')
+        result=self.install()
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(self.config.read_bytes(),before)
+
     def test_broken_candidate_keeps_working_command_and_receipt(self):
         self.assertEqual(self.install().returncode,0)
         command=self.bin/'wisp'; receipt=self.prefix/'install-receipt.json'
@@ -123,7 +135,7 @@ class InstallTests(unittest.TestCase):
 
     def test_manifest_traversal_or_symlink_is_refused(self):
         outside=self.root/'outside.py'; outside.write_text('protected')
-        data={'version':'0.1.3','files':{'../outside.py':hashlib.sha256(outside.read_bytes()).hexdigest()}}
+        data={'version':'0.1.4','files':{'../outside.py':hashlib.sha256(outside.read_bytes()).hexdigest()}}
         (self.source/'manifest.json').write_text(json.dumps(data))
         self.assertNotEqual(self.install().returncode,0)
         self.assertEqual(outside.read_text(),'protected')

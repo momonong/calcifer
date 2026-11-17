@@ -2,11 +2,13 @@
 
 Wisp 讓日常與開發共用一個個人助理入口，現階段沿用官方 Hermes 的介面與 agent 引擎。
 
-**目前版本為 Wisp 0.1.3 預覽版。** 在 Linux 或 Windows 輸入 `wisp`，會開啟本機 Hermes Webapp。安裝器使用獨立設定與資料目錄，保留既有 Hermes、Calcifer 和登入；重裝沿用原設定。模型與供應商是可替換的能力來源，不是 Wisp 的產品身分。
+**目前原始碼版本為 Wisp 0.1.4 預覽版。** Ubuntu 設定桌面後，`wisp` 開啟官方 Hermes Desktop；`wisp webapp` 保留瀏覽器入口。沒有桌面設定的安裝與 Windows 繼續使用 Webapp。安裝器保留既有 profile、登入與設定；資料分離不等於 OS 沙箱。
 
-- [安裝與下載](https://momonong.me/sites/wisp/)：固定版 ZIP、安裝腳本與 SHA256。
+- [安裝與下載](https://momonong.me/sites/wisp/)：目前仍是已部署的 **0.1.3**，與本次 Git 交付分開。
 - [安裝包使用說明](wisp/README.md)：首次準備、重裝、資料位置與回復。
-- [Wisp 0.1.3 交付範圍與現況](docs/wisp-preview-0.1.3.md)：目前通過與待驗收項目。
+- [Wisp 0.1.4 交付範圍與版本對齊](docs/wisp-preview-0.1.4.md)：建置、驗證與回復方式。
+- [Wisp、Hermes 與 OpenCode 功能界線](docs/wisp-feature-comparison.md)：哪些是新增、哪些直接沿用。
+- [Wisp 0.1.3 歷史交付](docs/wisp-preview-0.1.3.md)：保留原版本的證據。
 
 ```sh
 wisp
@@ -14,7 +16,7 @@ wisp doctor
 wisp status
 ```
 
-Windows 原生安裝、Webapp 建置、ChatGPT/Codex 供應商登入、基本對話與立即重開同一對話，已有使用者回報。檔案開發的完整人工驗收、原生桌面入口、第二供應商切換與跨日接續仍未驗證。
+Windows 原生安裝、Webapp 建置、供應商登入、基本對話與立即重開同一對話已有使用者回報。Ubuntu 的隔離開發案例已完成實作、退回修正、40 項測試、接受套用與重開接續；桌面入口已由使用者確認。Windows 完整開發／Desktop、第二供應商切換及 OS 通知仍有未驗證項目。
 
 Wisp 版本與下方歷史 Calcifer CLI 的版本分開管理。既有 `calcifer` 命令、Node 套件與已合併的 CLI 功能保留；Wisp 不會自動接管或恢復舊實驗。
 

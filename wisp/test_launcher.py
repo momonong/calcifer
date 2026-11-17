@@ -38,6 +38,84 @@ sys.exit(int(os.environ.get('WISP_TEST_EXIT','0')))
     def run_cli(self, *args, **extra):
         return subprocess.run([sys.executable,'-B',str(ROOT/'launcher.py'),*args],env={**self.env,**extra},capture_output=True,text=True)
 
+    def configure_desktop(self, exit_code=0):
+        app=self.root/'desktop app 中文'; (app/'dist').mkdir(parents=True)
+        (app/'package.json').write_text('{"name":"hermes","main":"dist/electron-main.mjs"}')
+        (app/'dist/electron-main.mjs').write_text('// official bundle fixture')
+        electron=self.root/'electron test'
+        electron.write_text('#!'+sys.executable+'\n'+'''import os,sys,json
+from pathlib import Path
+Path(os.environ['WISP_TEST_TRACE']).write_text(json.dumps({'args':sys.argv[1:],'cwd':os.getcwd(),'home':os.environ.get('HERMES_HOME'),'desktop':os.environ.get('HERMES_DESKTOP_USER_DATA_DIR'),'root':os.environ.get('HERMES_DESKTOP_HERMES_ROOT'),'overrides':{k:v for k,v in os.environ.items() if k in ['HERMES_PROFILE','HERMES_RUNTIME_DIR','HERMES_WEB_DIST','ELECTRON_RUN_AS_NODE'] or (k.startswith('HERMES_DESKTOP_') and k not in ['HERMES_DESKTOP_USER_DATA_DIR','HERMES_DESKTOP_HERMES_ROOT','HERMES_DESKTOP_CWD'])}}))
+''' + f'sys.exit({exit_code})\n')
+        electron.chmod(0o700)
+        config=json.loads(self.config.read_text())
+        config['desktop']={'executable':str(electron),'app':str(app),'hermes_root':str(self.root),'cwd':str(self.root),'version':'0.23.2'}
+        self.config.write_text(json.dumps(config))
+        return config
+
+    def test_configured_desktop_is_default_and_keeps_profile_and_working_directory(self):
+        config=self.configure_desktop()
+        before=self.config.read_bytes()
+        result=self.run_cli(HERMES_PROFILE='other',HERMES_RUNTIME_DIR='/other',HERMES_WEB_DIST='/other',ELECTRON_RUN_AS_NODE='1')
+        self.assertEqual(result.returncode,0,result.stderr)
+        trace=json.loads(self.trace.read_text())
+        self.assertEqual(trace['args'],[config['desktop']['app']])
+        self.assertEqual(trace['cwd'],str(self.root))
+        self.assertEqual(trace['home'],str(self.hermes_home))
+        self.assertEqual(trace['desktop'],config['desktop_data'])
+        self.assertEqual(trace['root'],str(self.root))
+        self.assertEqual(trace['overrides'],{})
+        self.assertEqual(self.config.read_bytes(),before)
+
+    def test_desktop_launch_does_not_require_webapp_bundle(self):
+        config=self.configure_desktop(); config['webapp_dist']=str(self.root/'missing browser bundle')
+        self.config.write_text(json.dumps(config))
+        self.assertEqual(self.run_cli().returncode,0)
+        self.assertNotEqual(self.run_cli('webapp').returncode,0)
+
+    def test_inherited_desktop_controls_cannot_replace_local_runtime(self):
+        self.configure_desktop()
+        overrides={
+            'HERMES_DESKTOP_REMOTE_URL':'https://example.invalid',
+            'HERMES_DESKTOP_REMOTE_TOKEN':'test-only-marker',
+            'HERMES_DESKTOP_DEV_SERVER':'http://example.invalid',
+            'HERMES_DESKTOP_WEB_DIST':'/other/dist',
+            'HERMES_DESKTOP_HERMES':'/other/hermes',
+            'HERMES_DESKTOP_PYTHON':'/other/python',
+            'HERMES_DESKTOP_IS_PACKAGED':'1',
+            'HERMES_DESKTOP_BOOT_FAKE':'1',
+            'HERMES_DESKTOP_IGNORE_EXISTING':'1',
+            'HERMES_DESKTOP_ISOLATED_BACKEND':'1',
+            'HERMES_DESKTOP_CDP_PORT':'9999',
+        }
+        result=self.run_cli(**overrides)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(json.loads(self.trace.read_text())['overrides'],{})
+
+    def test_explicit_webapp_and_terminal_link_remain_available_with_desktop(self):
+        self.configure_desktop()
+        for args in [('webapp',),('--no-open',)]:
+            result=self.run_cli(*args)
+            self.assertEqual(result.returncode,0,result.stderr)
+            expected=['webapp','--skip-build']+(['--no-open'] if args==('--no-open',) else [])
+            self.assertEqual(json.loads(self.trace.read_text())['args'],expected)
+
+    def test_broken_desktop_never_falls_back_to_browser(self):
+        config=self.configure_desktop()
+        Path(config['desktop']['app'],'dist/electron-main.mjs').unlink()
+        result=self.run_cli()
+        self.assertNotEqual(result.returncode,0)
+        self.assertFalse(self.trace.exists())
+
+    def test_desktop_early_failure_is_reported(self):
+        self.configure_desktop(exit_code=6)
+        self.assertEqual(self.run_cli().returncode,6)
+
+    def test_explicit_desktop_requires_configuration(self):
+        result=self.run_cli('desktop')
+        self.assertNotEqual(result.returncode,0)
+        self.assertFalse(self.trace.exists())
+
     def test_default_opens_native_webapp_with_private_home_and_no_shell(self):
         result=self.run_cli()
         self.assertEqual(result.returncode,0,result.stderr)

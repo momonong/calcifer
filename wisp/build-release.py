@@ -7,7 +7,7 @@ from pathlib import Path
 import zipfile
 
 ROOT=Path(__file__).resolve().parent
-VERSION='0.1.3'
+VERSION='0.1.4'
 FILES=['launcher.py','install.py','wisp.ps1','wisp.cmd','README.md']
 
 def main():
@@ -16,6 +16,7 @@ def main():
     release.mkdir(parents=True,exist_ok=True)
     payload={name:(ROOT/name).read_bytes() for name in FILES}
     manifest={'version':VERSION,'engine_baseline':{'version':'0.23.1','commit':'72c880370ff2e47dd587982ddded1b1ce90cfde4'},
+              'linux_desktop_baseline':{'version':'0.23.2','commit':'ae2a81ccc00e9b7c06301523e5bb09608397149c'},
               'files':{name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}}
     payload['manifest.json']=(json.dumps(manifest,indent=2,sort_keys=True)+'\n').encode()
     archive=release/f'wisp-{VERSION}.zip'
