@@ -1,4 +1,26 @@
-# Calcifer（卡西法）
+# Wisp
+
+Wisp 讓日常與開發共用一個個人助理入口，現階段沿用官方 Hermes 的介面與 agent 引擎。
+
+**目前版本為 Wisp 0.1.3 預覽版。** 在 Linux 或 Windows 輸入 `wisp`，會開啟本機 Hermes Webapp。安裝器使用獨立設定與資料目錄，保留既有 Hermes、Calcifer 和登入；重裝沿用原設定。模型與供應商是可替換的能力來源，不是 Wisp 的產品身分。
+
+- [安裝與下載](https://momonong.me/sites/wisp/)：固定版 ZIP、安裝腳本與 SHA256。
+- [安裝包使用說明](wisp/README.md)：首次準備、重裝、資料位置與回復。
+- [Wisp 0.1.3 交付範圍與現況](docs/wisp-preview-0.1.3.md)：目前通過與待驗收項目。
+
+```sh
+wisp
+wisp doctor
+wisp status
+```
+
+Windows 原生安裝、Webapp 建置、ChatGPT/Codex 供應商登入、基本對話與立即重開同一對話，已有使用者回報。檔案開發的完整人工驗收、原生桌面入口、第二供應商切換與跨日接續仍未驗證。
+
+Wisp 版本與下方歷史 Calcifer CLI 的版本分開管理。既有 `calcifer` 命令、Node 套件與已合併的 CLI 功能保留；Wisp 不會自動接管或恢復舊實驗。
+
+## Calcifer CLI 與歷史驗證
+
+以下保留 Calcifer 已發布內容及各階段限制。舊段落中的「目前」依各自標示日期解讀，並不代表 Wisp 功能已通過驗收。
 
 > **0.0.8｜2026-11-09：可保存、修訂與交付的通用 CLI 工作階段。**
 > 使用 `node bin/calcifer.mjs --help`；安裝啟動器後可用 `calcifer --…`。支援明確模型池內的任務分配、Codex／agy adapters、隔離 Python 驗收、JSON／JSONL、完成成果修訂及 patch／文件交付。
