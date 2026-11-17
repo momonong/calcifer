@@ -1,10 +1,13 @@
-# Wisp 0.1.3 預覽版
+# Wisp 0.1.4 預覽版
 
-輸入 `wisp`，在預設瀏覽器開啟本機的官方 Hermes Webapp。日常對話、專案與開發工具沿用 Hermes。Wisp 目前提供啟動、安裝與診斷入口，尚未完成獨立的任務批准／合入管理層。
+輸入 `wisp`，開啟設定的官方 Hermes 介面。Linux 已設定 `desktop` 時開啟獨立桌面；沒有桌面設定的安裝與 Windows 仍開啟 Webapp。日常對話、專案與開發工具沿用 Hermes。Wisp 提供啟動、安裝與診斷入口，尚未完成獨立的任務批准／合入管理層。
+
+0.1.4 原始碼與本機安裝流程在本 repo；既有網站下載仍是 0.1.3，不能用網站安裝指令取得尚未部署的 0.1.4。舊版封包不覆寫。
 
 ## 使用條件
 
 - 已安裝官方 Hermes；本版驗證基準為 **0.23.1**，原始碼 commit `72c880370ff2e47dd587982ddded1b1ce90cfde4`。
+- Ubuntu 桌面另對齊 **0.23.2**，commit `ae2a81ccc00e9b7c06301523e5bb09608397149c`。Windows 的引擎準備仍固定 0.23.1，沒有因 Linux 維護而升級。
 - Linux：Python 3.10+、curl、瀏覽器。Windows：Windows 10/11、PowerShell 5.1+、瀏覽器。
 - 安裝新的 Wisp profile 時，安裝器會用官方 Hermes 準備這個 profile 的鎖定依賴與 Webapp；首次需要下載，可能等候數分鐘。明確沿用既有 profile 時不自動重建；若缺少成品，另執行 `wisp prepare`。
 - 模型使用自己的供應商帳號與配額。Wisp 安裝不包含免費模型額度，也不會自動派發任務。
@@ -13,7 +16,7 @@
 
 Hermes 0.16.0 沒有本版使用的 `webapp` 命令，不能直接作為此入口的引擎。Windows 已有舊 Hermes 時，可先用隨版本提供的 `prepare-windows-engine.ps1` 在 `%LOCALAPPDATA%\Wisp\` 準備固定版引擎。它只執行官方固定版的 runtime stages，另寫入該目錄的 launcher，不更新原 Hermes、不發佈新的全域 `hermes` 命令，也不搬移登入。需要明確傳入既有 Python 的完整位置；既有 Wisp 設定或無法確認歸屬的資料目錄會使它停止。
 
-這條相容性準備路徑仍待 Windows 實機驗收。新的 Wisp profile 須由本人登入一次。Chromium／Computer Use 選用套件不在這次初始準備內；瀏覽器 Webapp 仍會在 `wisp prepare` 建置。
+這條相容性準備路徑已在 Windows 的 0.1.3 安裝中確認：引擎準備、Webapp 建置、登入、基本對話與立即重開均可用。0.1.4 的 Windows 實機升級與完整開發流程尚未驗收。新的 Wisp profile 須由本人登入一次。Chromium／Computer Use 選用套件不在這次初始準備內；瀏覽器 Webapp 仍會在 `wisp prepare` 建置。
 
 ## 安裝
 
@@ -50,7 +53,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& (Join-Path $env:TE
 
 ### Windows 第一次使用與接續
 
-1. `wisp doctor` 應顯示 Wisp 0.1.3、已設定的 Hermes 路徑與版本。
+1. `wisp doctor` 應顯示實際安裝的 Wisp 版本、已設定的 Hermes 路徑與版本。
 2. `wisp` 應開啟本機 Hermes Webapp。已有登入會沿用；新的獨立 profile 由本人依畫面登入，不搬移認證檔。
 3. 交辦「請建立今天的三項待辦，先只在對話中整理，不操作其他檔案」，核對能收到正常回覆。
 4. 關閉分頁與終端，再開 Git Bash 輸入 `wisp`，應能找回同一對話及剛才的待辦。
@@ -67,12 +70,36 @@ bash "$(cygpath -u "$LOCALAPPDATA")/Wisp/bin/wisp" doctor
 
 | 命令 | 效果 |
 | --- | --- |
-| `wisp` | 使用現有 Webapp 成品，開啟官方介面；不發送模型任務 |
+| `wisp` | Linux 有桌面設定時開 Desktop，否則開 Webapp；不發送模型任務 |
+| `wisp desktop` | Linux：明確開啟設定的桌面；成品缺少時停止，不自動換入口 |
+| `wisp webapp` | Linux：明確開啟瀏覽器介面；保留同一 profile |
 | `wisp status` | 查 gateway／Webapp 狀態；不啟動服務 |
 | `wisp doctor` | 查設定路徑及 Hermes 版本；不發送模型請求 |
 | `wisp prepare` | 準備獨立依賴與官方 Webapp；Linux 每個長步驟最長 20 分鐘 |
 | `wisp --no-open` | Linux：在私人終端顯示一次性登入連結 |
 | `wisp -NoOpen` | Windows：同上；不要分享或貼到聊天 |
+
+### Linux 桌面設定與版本對齊
+
+在既有 Wisp `config.json` 加入下列 `desktop` 物件。各路徑須換成當前主機已準備、已驗證的完整路徑；不改 `hermes_home` 或 `desktop_data`。本版不自動下載桌面或自動追蹤最新版。
+
+```json
+{
+  "desktop": {
+    "executable": "/absolute/pinned-source/apps/desktop/node_modules/electron/dist/electron",
+    "app": "/absolute/pinned-source/apps/desktop",
+    "hermes_root": "/absolute/existing-hermes-agent",
+    "cwd": "/absolute/existing-workspace",
+    "version": "0.23.2"
+  }
+}
+```
+
+`wisp doctor` 列出設定的桌面版本與後端版本；不同時提示對齊。`wisp` 只確認程序是否立即失敗，不把程序啟動當成 UI 驗收。桌面輸出保存在 `desktop_data/logs/wisp-desktop.log`，權限限本人；日誌可能含私人資訊，不公開上傳。重裝會保留整個桌面設定。
+
+Linux 入口會清除繼承的 `HERMES_DESKTOP_*` 環境變數，再套用 Wisp 明確設定的資料、引擎與工作目錄。這可避免開發終端殘留的遠端 URL、測試模式或另一份介面覆寫本機設定。
+
+保留舊 source/build、Wisp release、config、命令與 install receipt 後才切換版本。詳細建置與退回步驟見 repo 中的 `docs/wisp-preview-0.1.4.md`。舊版 0.1.3 安裝器不認識新增桌面設定，退回時應使用保存的入口與設定，不能假設重跑舊安裝器就會降版。
 
 首次使用新的 Wisp profile，依 Hermes 畫面登入自己的模型供應商。關閉分頁不會停止 gateway 或背景工作；本版不提供一鍵終止所有工作的命令。
 

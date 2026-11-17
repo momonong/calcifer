@@ -7,7 +7,7 @@ param(
     [switch]$Version
 )
 $ErrorActionPreference = 'Stop'
-$wispVersion = '0.1.3'
+$wispVersion = '0.1.4'
 if ($Version -or $Command -eq 'version') { Write-Output "Wisp $wispVersion"; exit 0 }
 if ($Command -eq 'help') { Write-Output 'wisp [open|status|doctor|prepare|version] [-NoOpen]'; exit 0 }
 if ($NoOpen -and $Command -ne 'open') { Write-Error '-NoOpen requires open'; exit 2 }

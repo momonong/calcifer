@@ -10,8 +10,8 @@ param(
     [switch]$NoPath
 )
 $ErrorActionPreference = 'Stop'
-$releaseVersion = '0.1.3'
-$archiveUrl = 'https://momonong.me/sites/wisp/releases/0.1.3/wisp-0.1.3.zip'
+$releaseVersion = '0.1.4'
+$archiveUrl = 'https://momonong.me/sites/wisp/releases/0.1.4/wisp-0.1.4.zip'
 $archiveSha = '__ZIP_SHA256__'
 $temporary = $null
 $utf8 = New-Object System.Text.UTF8Encoding($false)

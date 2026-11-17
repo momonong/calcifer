@@ -22,7 +22,7 @@ class PowerShellTests(unittest.TestCase):
         self.root=Path(self.tmp.name); self.source=self.root/'payload'; self.source.mkdir()
         names=['launcher.py','install.py','wisp.ps1','wisp.cmd','README.md']
         for n in names:shutil.copyfile(ROOT/n,self.source/n)
-        manifest={'version':'0.1.3','files':{n:hashlib.sha256((self.source/n).read_bytes()).hexdigest() for n in names}}
+        manifest={'version':'0.1.4','files':{n:hashlib.sha256((self.source/n).read_bytes()).hexdigest() for n in names}}
         (self.source/'manifest.json').write_text(json.dumps(manifest))
         self.trace=self.root/'trace.json'; self.engine=self.root/'fake hermes'
         self.engine.write_text('#!'+sys.executable+'\n'+'''import json,os,sys
@@ -148,7 +148,7 @@ sys.exit(int(os.environ.get('WISP_TEST_EXIT','0')))
     [Console]::Error.WriteLine('#< CLIXML')
     [Console]::Error.WriteLine('<Objs><Obj S="progress"><MS><PR><AV>Preparing modules for first use.</AV></PR></MS></Obj></Objs>')
 }
-Write-Output 'Wisp 0.1.3'
+Write-Output 'Wisp 0.1.4'
 exit 0
 ''')
         manifest=json.loads((self.source/'manifest.json').read_text())
@@ -163,7 +163,7 @@ exit 0
         protected=[self.prefix/'bin/wisp.cmd',self.prefix/'config.json',self.prefix/'install-receipt.json']
         before={p:p.read_bytes() for p in protected}
         candidate=self.source/'wisp.ps1'
-        candidate.write_text("[Console]::Error.WriteLine('real candidate error')\nWrite-Output 'Wisp 0.1.3'\nexit 0\n")
+        candidate.write_text("[Console]::Error.WriteLine('real candidate error')\nWrite-Output 'Wisp 0.1.4'\nexit 0\n")
         manifest=json.loads((self.source/'manifest.json').read_text())
         manifest['files']['wisp.ps1']=hashlib.sha256(candidate.read_bytes()).hexdigest()
         (self.source/'manifest.json').write_text(json.dumps(manifest))

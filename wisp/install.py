@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-VERSION='0.1.3'
+VERSION='0.1.4'
 PAYLOAD_FILES={'launcher.py','install.py','wisp.ps1','wisp.cmd','README.md'}
 
 
@@ -102,6 +102,7 @@ def main(argv=None):
         intended={'schema_version':1,'hermes':str(engine),'hermes_home':str(home),
                   'desktop_data':str(desktop),'webapp_dist':str(dist) if dist else None}
         if existing is not None:
+            if 'desktop' in existing: intended['desktop']=existing['desktop']
             if existing!=intended: raise ValueError(f'已有不同設定，已保留；請先審閱 {config}')
         canonical=json.dumps(manifest,sort_keys=True,separators=(',',':')).encode()
         release=prefix/'releases'/f'{VERSION}-{digest(canonical)[:16]}'

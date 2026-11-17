@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Taipei",
+  "scope": "Ubuntu desktop alignment and Wisp launcher maintenance",
+  "wisp_version": "0.1.4",
+  "hermes_version": "0.23.2",
+  "hermes_commit": "ae2a81ccc00e9b7c06301523e5bb09608397149c",
+  "electron_version": "44.10.2",
+  "archive_sha256": "84a1aa95fb194674c3c24be17d87ccea259489dd3e2377827767b17aa6e6fc7f",
+  "tests": {"passed": 58, "skipped": 0, "duration_seconds": 35.407, "powershell_version": "7.4.20"},
+  "review": {"critical": 0, "important_found": 1, "important_resolved_and_rechecked": 1},
+  "local_checks": {
+    "version_doctor_status_exit_codes": [0, 0, 0],
+    "desktop_entry_valid": true,
+    "installed_payload_matches_source": true,
+    "config_unchanged_by_final_install": true,
+    "protected_auth_and_config_metadata_unchanged": true,
+    "original_project_rows_unchanged": true,
+    "original_validation_session_and_counts_unchanged": true,
+    "old_builds_and_releases_preserved": true
+  },
+  "human_acceptance": {
+    "native_window": true,
+    "original_project_and_conversation": true,
+    "displayed_hermes_version": "0.23.2"
+  },
+  "model_tasks_dispatched": 0,
+  "website_deployed": false,
+  "website_download_version": "0.1.3",
+  "phase_1_started": false,
+  "not_verified_here": ["Windows 0.1.4 physical upgrade", "Windows Desktop", "OS notification delivery", "model quality"]
+}
