@@ -1,0 +1,6 @@
+{
+  "name": "wisp-core",
+  "title": "Wisp 開發任務",
+  "description": "同一對話中的批准、進度、候選 Diff 與結案。",
+  "api": "plugin_api.py"
+}

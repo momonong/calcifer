@@ -6,6 +6,7 @@ Wisp 是日常與開發共用的個人助理，沿用官方 Hermes Desktop、Web
 
 - [安裝與下載](https://momonong.me/sites/wisp/)：目前仍是已部署的 **0.1.3**，與本次 Git 交付分開。
 - [安裝包使用說明](wisp/README.md)：首次準備、重裝、資料位置與回復。
+- [Wisp 開發流程](docs/wisp-opencode-workflow.md)：選用的 OpenCode 開發插件、驗收與套回。從原始碼安裝。
 - [Wisp 0.1.4 交付範圍與版本對齊](docs/wisp-preview-0.1.4.md)：建置、驗證與回復方式。
 - [Wisp、Hermes 與 OpenCode 功能界線](docs/wisp-feature-comparison.md)：哪些是新增、哪些直接沿用。
 - [Wisp 0.1.3 歷史交付](docs/wisp-preview-0.1.3.md)：保留原版本的證據。

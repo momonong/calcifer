@@ -1,0 +1,11 @@
+name: wisp-core
+version: 0.1.0
+description: Wisp 同一對話開發流程：人工批准、OpenCode 候選工作區、進度與可追溯結案。
+author: Wisp
+provides_tools:
+  - wisp_propose
+  - wisp_status
+provides_hooks:
+  - pre_llm_call
+requires_auth:
+  - openai-codex
