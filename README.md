@@ -1,6 +1,6 @@
 # Wisp
 
-Wisp 讓日常與開發共用一個個人助理入口，現階段沿用官方 Hermes 的介面與 agent 引擎。
+Wisp 是日常與開發共用的個人助理，沿用官方 Hermes Desktop、Webapp 與 agent 引擎。
 
 **目前原始碼版本為 Wisp 0.1.4 預覽版。** Ubuntu 設定桌面後，`wisp` 開啟官方 Hermes Desktop；`wisp webapp` 保留瀏覽器入口。沒有桌面設定的安裝與 Windows 繼續使用 Webapp。安裝器保留既有 profile、登入與設定；資料分離不等於 OS 沙箱。
 
@@ -18,11 +18,11 @@ wisp status
 
 Windows 原生安裝、Webapp 建置、供應商登入、基本對話與立即重開同一對話已有使用者回報。Ubuntu 的隔離開發案例已完成實作、退回修正、40 項測試、接受套用與重開接續；桌面入口已由使用者確認。Windows 完整開發／Desktop、第二供應商切換及 OS 通知仍有未驗證項目。
 
-Wisp 版本與下方歷史 Calcifer CLI 的版本分開管理。既有 `calcifer` 命令、Node 套件與已合併的 CLI 功能保留；Wisp 不會自動接管或恢復舊實驗。
+早期 CLI 以 Calcifer 名稱發行。它的版本、`calcifer` 命令與 Node 套件識別碼獨立於現行 Wisp 入口。
 
-## Calcifer CLI 與歷史驗證
+## 舊版 CLI 與歷史驗證
 
-以下保留 Calcifer 已發布內容及各階段限制。舊段落中的「目前」依各自標示日期解讀，並不代表 Wisp 功能已通過驗收。
+以下保留舊版 CLI 的發布內容與各階段限制。舊段落中的「目前」依各自標示日期解讀。
 
 > **0.0.8｜2026-11-09：可保存、修訂與交付的通用 CLI 工作階段。**
 > 使用 `node bin/calcifer.mjs --help`；安裝啟動器後可用 `calcifer --…`。支援明確模型池內的任務分配、Codex／agy adapters、隔離 Python 驗收、JSON／JSONL、完成成果修訂及 patch／文件交付。
@@ -45,7 +45,7 @@ Wisp 版本與下方歷史 Calcifer CLI 的版本分開管理。既有 `calcifer
 
 工作台 UI 的既有研究提案繼續保留，尚未啟動 UI 實作。背景見 [產品方向與第一版場景](docs/product-direction-2026-10-26.md)、[固定版本上游研究](docs/upstream-workbench-research-2026-10-26.md) 與 [選型決策](decision.md)。
 
-卡西法的最小 OpenCode／Pi harness spike。以固定合成任務與同一組 mock Chat Completions 串流，查核公開 SDK 的接入、工具邊界、重試、取消與 session 讀回。
+早期 OpenCode／Pi harness spike 以固定合成任務與同一組 mock Chat Completions 串流，查核公開 SDK 的接入、工具邊界、重試、取消與 session 讀回。
 
 本輪結論：保留 OpenCode 為條件式主選，Pi 為對照；正式採用所需的真實模型效率與完整 UNKNOWN 恢復仍待驗證。比較表、最小 UI 建議與待決資訊見 [decision.md](decision.md)。
 
@@ -169,7 +169,7 @@ P1-A verification: targeted 23/23 and one full `npm test` 158/158, exit 0; both 
 ```sh
 research_dir=$(mktemp -d /tmp/calcifer-research-XXXXXX)
 npm run research:run -- run \
-  --question '卡西法接入公開唯讀文件服務，應選 stdio 還是 Streamable HTTP？' \
+  --question '接入公開唯讀文件服務時，應選 stdio 還是 Streamable HTTP？' \
   --profile research-fixture \
   --mock-script fixtures/research/mcp-transport-model.json \
   --output "$research_dir/run"

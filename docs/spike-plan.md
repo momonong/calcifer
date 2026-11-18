@@ -1,4 +1,4 @@
-# 卡西法：OpenCode／Pi 小型驗證計畫
+# Wisp｜早期 OpenCode／Pi 小型驗證計畫
 
 狀態：2026-10-25 本輪可取得的離線驗證與選型建議已交付，待使用者確認；正式 UI、真實模型與 Git 發布未執行。結果見 [decision.md](../decision.md)。
 

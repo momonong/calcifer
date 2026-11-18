@@ -1,8 +1,8 @@
-# 卡西法遠端工作台（M1）
+# Wisp｜舊版 CLI 遠端工作台（M1）
 
 目前：主機控制層、HTTP 邊界與手機介面已完成本機驗收。正式 HTTPS 開通尚待本次具體部署批准與私人終端密碼設定。`https://workbench.example.com/calcifer/` 是準備中的目的地，不能把此文件當成已上線證明。
 
-本版讓不同裝置接續同一個主機工作階段。主機持有檔案、Playbook、原生 agy／Codex CLI、模型資源批准與測試證據；手機只傳命令和讀取結果。這不把卡西法綁定 Thor：伺服器使用明確的專案登錄表，Thor 是目前選用的既有驗收工作階段。
+舊版 `calcifer` CLI 遠端工作台讓不同裝置接續同一個主機工作階段。主機持有檔案、Playbook、原生 agy／Codex CLI、模型資源批准與測試證據，手機負責傳送命令和讀取結果。伺服器使用明確的專案登錄表，Thor 是當時選用的驗收工作階段。現行 Wisp 介面見 [Wisp 使用說明](../wisp/README.md)。
 
 ## 已提供的操作
 
@@ -41,14 +41,14 @@ calcifer remote serve --config /私人目錄/remote.json
 
 ```text
 手機／其他電腦 → 既有 HTTPS 閘道 → gateway Caddy /calcifer/
-             → SSH 加密連線 → 開發主機 loopback → Calcifer → 既有 CLI
+             → SSH 加密連線 → 開發主機 loopback → 舊版 CLI → 既有執行管道
 ```
 
 沒有租用雲端電腦，也沒有建立新公開 SSH 埠。開發主機必須保持開機與連線；此版不提供主機離線時的雲端代跑、多主機轉移或 SSH 以外的工作搬遷。
 
 Caddy 安裝器要求目前檔案 SHA、單一 operation ID、主機健康檢查及 `caddy validate`，只插入 `/calcifer/` 片段並保留其餘位元組。備份及 PREPARED／reload intent／APPLIED 收據留在 閘道主機私密目錄。若 reload 結果未知，先讀回收據與實際服務；不能換 operation ID 盲目重做。共用網域中的其他應用必須同樣可信；本版不是不同使用者之間的安全隔離服務。
 
-服務單元先落盤而未啟動。正式啟動與 閘道路由套用有獨立部署批准要求；使用者在私人終端設定卡西法密碼及輸入 閘道 sudo 密碼。不要借用 `/sites/`、Quota 或 HTML Preview 的限定部署憑證。
+服務單元先落盤而未啟動。正式啟動與閘道路由套用有獨立部署批准要求；使用者在私人終端設定遠端工作台密碼及輸入閘道 sudo 密碼。不要借用 `/sites/`、Quota 或 HTML Preview 的限定部署憑證。
 
 核准開通後的管理命令：
 

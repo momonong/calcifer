@@ -142,7 +142,7 @@ OpenCode的`outcome`描述最後完成execution，可能屬舊工作；`active()
 
 ## 證據索引
 
-- **[G1]** [RequestGuard](../../src/request-guard.mjs)：12–29讀回／缺檔／unknown；31–58預算與intent；68–84回覆驗證、completed與unknown。固定公開程式版本 [58683dc](https://github.com/momonong/calcifer/blob/58683dc3ba6253f0cf7dedc6a1a43ef121842d6a/src/request-guard.mjs#L12-L29)。
+- **[G1]** [RequestGuard](../../src/request-guard.mjs)：12–29讀回／缺檔／unknown；31–58預算與intent；68–84回覆驗證、completed與unknown。固定公開程式版本 [58683dc](https://github.com/momonong/wisp/blob/58683dc3ba6253f0cf7dedc6a1a43ef121842d6a/src/request-guard.mjs#L12-L29)。
 - **[G2]** [selfhost response契約](../../src/selfhost-contract.mjs)：114–171，尤其164–171完整terminal與buffered response；只支持已固定的mock契約。
 - **[G3]** [ReceiptLedger](../../src/receipts.mjs)：4–5合成限制；12–34 operation／effect／receipt與reconcile。
 - **[G4]** [SDK worker](../../src/worker.mjs)：40–71先安裝mock出口；170–206 Pi clean reopen；214–240 OpenCode設定；282–296 OpenCode clean reopen。內部寫作「Read-only status check」的prompt其實是有副作用風險的prompt，測試是刻意驗gate拒送，**不得複製為產品的唯讀查詢實作**。

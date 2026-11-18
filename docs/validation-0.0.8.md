@@ -1,4 +1,4 @@
-# Calcifer 0.0.8：整合驗證與平台界線
+# Wisp｜舊版 CLI 0.0.8 整合驗證與平台界線
 
 2026-11-09，Linux x86_64，Node 22.22.2、npm 10.9.7、Bun 1.4.4。依原 lockfile 使用 `npm ci --offline --no-audit --no-fund` 安裝 421 packages；沒有更新模型或依賴版本。
 
