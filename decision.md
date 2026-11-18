@@ -1,4 +1,6 @@
-# 卡西法（Calcifer）選型決策
+# Wisp｜早期選型決策
+
+本文記錄專案以 Calcifer 名稱開發時的選型與驗證。現行 Wisp 的介面、引擎與使用方式見 [Wisp 首頁](README.md)。
 
 更新：2026-10-30（Asia/Taipei）。當前決策：OpenCode 維持主選、Pi 保留對照；已授權在 host 核准 profiles 內自動路由及分段協作開發，取代先前人工 profile only／不做協作的限制。0.0.2 完成 [協作計畫](docs/collaborative-development-plan-2026-10-30.md) Milestone 1 的離線契約與 mock 規劃；0.0.3 完成並合併 [M2 的本機隔離協作原型](docs/milestone-2-isolated-collaboration-2026-10-30.md)；0.0.4 接通 [M3 官方 SDK 的離線 goal 閉環](docs/milestone-3-official-sdk-goal-flow-2026-10-30.md)。0.0.5 新增 [受限 JSON CLI 執行驗收](docs/milestone-4-json-cli-validation-2026-10-30.md)，0.0.6 再接通 [固定零依賴 repo 的 npm觀察＋host oracle](docs/milestone-5-npm-repo-validation-2026-10-30.md) 與 caller check-only CLI。0.0.7 新增 [已驗收保存成果的唯讀 patch 匯出](docs/milestone-6-artifact-export-2026-10-30.md)，使用固定 Git no-index backend，不套用、不重跑生成／驗收。可信 mock worker 與 namespace check 仍不代表真模型協作能力或成本已驗證；live mode 不可用，正式 UI 繼續暫停。
 
@@ -127,7 +129,7 @@ OpenCode 官方 changelog 顯示 v2.1.4 為 2026-10-23：相關變更包括 MCP 
 
 官方說明將 Claude Code 的工作循環描述為取得 context、使用工具、驗證並調整；也區分模型與包住模型的 harness。最佳實務強調提供可執行的成功判準與根因驗證。這支持我們測試「完整工作方式」，不構成 Claude Code 效率勝出的證據，也不能推論換 Claude 模型即可重現全部體驗。本輪未使用 Claude Code CLI、帳號或額度。[工作循環](https://code.claude.com/docs/en/how-claude-code-works)、[官方最佳實務](https://code.claude.com/docs/en/best-practices)
 
-## 卡西法最小 UI 建議（待確認，未實作）
+## 早期最小 UI 建議（待確認，未實作）
 
 保留一個工作區、一個 session 主畫面：
 

@@ -1,4 +1,4 @@
-# Windows 接續：用 Calcifer 推進 Thor 研究與競賽企劃
+# Wisp｜舊版 CLI 的 Windows 接續與 Thor 企劃
 
 日期：2026-11-09，Asia/Taipei。這是可攜接續說明，不包含帳號、憑證、私人端點、模型 conversation 或原始帳本。此文件本身不增加外部資源、馬達動作、訓練、正式報名／上傳或 Git 授權；以使用者貼入本次 Codex 的指示為準。
 
@@ -14,7 +14,7 @@
 
 1. 確認原生 Windows／PowerShell、WSL、SSH 的實際範圍；讀適用 AGENTS.md 與固定 Playbook 指南。不要沿用 Ubuntu 的絕對路徑、使用者名稱、裝置埠或虛擬環境。
 2. 先查已指定或登錄的 repo；確認 remote、HEAD、分支、Git status、其他使用者或程序。沒有 repo 才在使用者確認的位置 clone；有未提交資料就保留，不盲目 pull/reset/clean。
-3. 版本來源：`https://github.com/momonong/calcifer` 的 0.0.8 與 `https://github.com/momonong/thor-vla-erasebot` 的 0.3.0。以交接回覆中的合併 SHA 固定版本；package version 不是 Git tag，本次不建立 tag。
+3. 版本來源：`https://github.com/momonong/wisp` 的 0.0.8 與 `https://github.com/momonong/thor-vla-erasebot` 的 0.3.0。以交接回覆中的合併 SHA 固定版本；package version 不是 Git tag，本次不建立 tag。
 4. Calcifer 閱讀 `docs/project-cli.md`、`docs/validation-0.0.8.md`。Thor 閱讀 `docs/liner-research-plan.md`、`docs/liner-offline-evaluation.md`、`docs/development/batch-report.md`、`docs/validation-0.3.0.md`。
 
 ## 2. 分開核對三種環境
@@ -31,7 +31,7 @@ Thor 的單筆 CLI 可在原生 Windows Python 3.12 做局部驗收：`py -3.12 
 
 公開 `bin/calcifer.mjs` 不自動修改 PATH。Codex adapter 查 Linux `PATH` 的 `codex` 並核對版本與該執行帳號登入；agy adapter 查 Linux `~/.local/bin/agy`。範例路由的 planner 需要 agy。若只有相容 Codex，可依 CLI 文件的單模型 `work` 入口執行已拆分工作；`prepare/start` 的程式與文件交付都需要明確 routing，不能用單模型設定冒充已可執行整段文件流程。不能暗中改模型池或借用 Windows 登入。
 
-## 3. 先讓 Calcifer 在當前裝置可控地工作
+## 3. 在當前裝置驗證舊版 CLI
 
 - `node bin/calcifer.mjs --list --json` 應只讀；新筆電沒有 Ubuntu 的已登錄專案是正常情況，不代表資料消失。
 - 公開 Git 沒有原機私有 project.json、credentials、native conversations 或模型額度。不能把舊目錄名當成筆電已可恢復的 session，也不能複製剩餘額度替新階段授權。

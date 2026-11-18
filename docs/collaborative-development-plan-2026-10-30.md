@@ -1,4 +1,4 @@
-# 卡西法：自動路由與協作開發計畫
+# Wisp｜早期自動路由與協作開發計畫
 
 > For agentic workers: execute the approved milestones in order, using the project's bounded verification rules. The implementation owner may use the relevant Superpowers workflow; user authorization and preservation rules take precedence over skill defaults.
 
@@ -40,7 +40,7 @@ Interfaces:
 
 ## Milestone 2 — 隔離協作與整合驗收（目標版本 0.0.3）
 
-M1（0.0.2）已完成 [PR #2](https://github.com/momonong/calcifer/pull/2) 合併與 remote main 核對；M2 已完成 [PR #3](https://github.com/momonong/calcifer/pull/3) 合併。M2 細化介面及安全邊界見 [M2 契約](milestone-2-isolated-collaboration-2026-10-30.md)；最終驗收由 host.finalCheckIds 固定，單任務仍可使用。
+M1（0.0.2）已完成 [PR #2](https://github.com/momonong/wisp/pull/2) 合併與 remote main 核對；M2 已完成 [PR #3](https://github.com/momonong/wisp/pull/3) 合併。M2 細化介面及安全邊界見 [M2 契約](milestone-2-isolated-collaboration-2026-10-30.md)；最終驗收由 host.finalCheckIds 固定，單任務仍可使用。
 
 - [x] 薄runner只派送相依已完成的任務；各worker有隔離工作目錄，產物帶基線hash與允許的變更集合。
 - [x] 相同檔案衝突不得最後寫入者覆蓋；有相依的任務讀到已核對前置成果。無關工作保留，未通過的patch不進整合結果。
@@ -61,7 +61,7 @@ M2 原 54/54、89/89 與首輪修正後 12/12、2/2、1/1 保留為歷史。UNKN
 - [x] 最終報告包含目標、任務分派、diff、相關驗證、失敗/未完成、人類介入及usage unknown；工程完成與人工接受分開。
 - [ ] 只有服務窗口、模型revision/parser、資料與資源均已確認才做live；否則交付完整離線能力及精確pending清單，不以合成結果假報真能力。
 
-M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證已完成；修正前唯一完整 npm test 108/108（當時含 M3 15 項）；其後已知 budget 拒絕分類修正的最後受影響測試 6/6，均 exit 0、0 fail/skip，未重跑全套；[實際 API/維護條件](milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](goal-validation-summary-2026-10-30.json)、[live/蒸餾門檻](live-and-distillation-gates-2026-10-30.md) 明列本版 scope。mock 次數不代表模型能力；一般測試框架仍 pending。M3 已由 [PR #4](https://github.com/momonong/calcifer/pull/4) 合併並核對 remote/local main。
+M3（0.0.4）離線閉環、同任務兩官方 SDK wire 與受影響行為驗證已完成；修正前唯一完整 npm test 108/108（當時含 M3 15 項）；其後已知 budget 拒絕分類修正的最後受影響測試 6/6，均 exit 0、0 fail/skip，未重跑全套；[實際 API/維護條件](milestone-3-official-sdk-goal-flow-2026-10-30.md)、[比較摘要](goal-validation-summary-2026-10-30.json)、[live/蒸餾門檻](live-and-distillation-gates-2026-10-30.md) 明列本版 scope。mock 次數不代表模型能力；一般測試框架仍 pending。M3 已由 [PR #4](https://github.com/momonong/wisp/pull/4) 合併並核對 remote/local main。
 
 ## Milestone 4 — 固定 JSON CLI 執行驗收（目標版本 0.0.5）
 
@@ -88,7 +88,7 @@ M5完成後由原目標對話整合；若尚有有益且已授權的下一個獨
 
 ## Milestone 6 — 已驗收 artifacts 的唯讀 patch 匯出（目標版本 0.0.7）
 
-M5 已由 [PR #6](https://github.com/momonong/calcifer/pull/6) 合併後，接續原離線交付目標的薄匯出介面；不再增加生成平台或啟動下一階段。
+M5 已由 [PR #6](https://github.com/momonong/wisp/pull/6) 合併後，接續原離線交付目標的薄匯出介面；不再增加生成平台或啟動下一階段。
 
 - [x] 既有 collaboration／goal authoritative reopen，僅 completed／accepted 且無 UNKNOWN 才匯出；重讀完整 snapshots／manifest 並精確重建 artifacts。
 - [x] 固定 Git no-index backend、private scratch、scrubbed environment、完整 close／output bounds；stdout 只含 patch，stderr 短收據，無 apply 或來源／state 寫入。

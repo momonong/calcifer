@@ -8,8 +8,8 @@
 
 | 交付 | 內容 | 來源與合併 |
 | --- | --- | --- |
-| [PR #8](https://github.com/momonong/calcifer/pull/8) | P1-A 八模組與合成 taskboard 驗收 | feature `537f475020cb8e72661d93bee7fac5226e95cd2a`；merge [6e532dc](https://github.com/momonong/calcifer/commit/6e532dc3afb2a32506c17a4d04a596c6e6b5a13a) |
-| [PR #9](https://github.com/momonong/calcifer/pull/9) | read／search 結果超限改為已知失敗，保留真正 ack 遺失的 UNKNOWN | feature `fe23cd248154889d2826fcd3bd55e9021ea9bc79`；merge [32a6321](https://github.com/momonong/calcifer/commit/32a6321fa7d0c38f54103575350d390a6e79d76f) |
+| [PR #8](https://github.com/momonong/wisp/pull/8) | P1-A 八模組與合成 taskboard 驗收 | feature `537f475020cb8e72661d93bee7fac5226e95cd2a`；merge [6e532dc](https://github.com/momonong/wisp/commit/6e532dc3afb2a32506c17a4d04a596c6e6b5a13a) |
+| [PR #9](https://github.com/momonong/wisp/pull/9) | read／search 結果超限改為已知失敗，保留真正 ack 遺失的 UNKNOWN | feature `fe23cd248154889d2826fcd3bd55e9021ea9bc79`；merge [32a6321](https://github.com/momonong/wisp/commit/32a6321fa7d0c38f54103575350d390a6e79d76f) |
 
 本停止點的程式基線是 `32a6321fa7d0c38f54103575350d390a6e79d76f`。根 package 仍為 **0.0.7**，沒有發新版、release tag 或部署。已驗證環境：Node 22.22.2、Bun 1.4.4、OpenCode 2.1.4、Pi 1.4.0；其他平台／版本不由這些收據推定。
 

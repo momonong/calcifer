@@ -1,6 +1,6 @@
-# 使用卡西法開發專案
+# Wisp｜舊版專案 CLI
 
-卡西法把目標拆成任務，依任務選擇已授權的模型，管理隔離工作區、驗證、恢復與 patch 交付。**專案、模型與執行管道分開設定**：Thor 是驗收案例；Codex／agy 是執行管道；不把產品固定在 Thor、Sol 或單一供應商。
+早期的 `calcifer` CLI 把目標拆成任務，依任務選擇已授權的模型，管理隔離工作區、驗證、恢復與 patch 交付。**專案、模型與執行管道分開設定**：Thor 是驗收案例，Codex／agy 是可選的執行管道。現行 Wisp 的啟動與安裝見 [Wisp 使用說明](../wisp/README.md)。
 
 目前支援 Linux、Node 22、Python 3.12 標準函式庫與 unittest。這條入口使用公開 CLI；OpenCode／Pi 底座研究仍保留。正式 UI、自動多帳號／quota broker 接入及其他語言驗證器仍未交付；遠端控制層的本機驗收與部署限制另見 [遠端工作台](remote-workbench.md)。
 
@@ -88,7 +88,7 @@ calcifer --project my-project
 
 ## 建立依任務選模的專案
 
-在 Calcifer checkout 下執行；`init` 不呼叫模型。執行端需 Linux、`/usr/bin/python3.12`、flock／timeout／unshare／bwrap 及 `/usr/bin/git`。公開 init 的 Playbook loader 讀取執行帳號 `~/.codex/AGENTS.md` 中唯一、完整的 guides-commit，並依該 pin 查 `~/.codex/agent-playbook/versions/<guides-commit>/` 的 `SOURCE_COMMIT` 和 `guides/{engineering,external-execution,model-selection,collaboration}.md`；目前不自動解析其他 CODEX_HOME。核心、快照 commit 與四檔都須存在且一致；缺少、重複 pin 或不一致時拒絕，不改用 main／latest。此修正的 WSL 驗證見 [本機驗證紀錄](validation-wsl-2026-11-09.md)。WSL 是另一個環境，不能假定 Windows 的規則與登入已在其中可用。缺少時依裝置同步流程補明列的指南，避免重複 init。
+在專案的 Git 工作目錄執行。`init` 不呼叫模型。執行端需 Linux、`/usr/bin/python3.12`、flock／timeout／unshare／bwrap 及 `/usr/bin/git`。公開 init 的 Playbook loader 讀取執行帳號 `~/.codex/AGENTS.md` 中唯一、完整的 guides-commit，並依該 pin 查 `~/.codex/agent-playbook/versions/<guides-commit>/` 的 `SOURCE_COMMIT` 和 `guides/{engineering,external-execution,model-selection,collaboration}.md`；目前不自動解析其他 CODEX_HOME。核心、快照 commit 與四檔都須存在且一致；缺少、重複 pin 或不一致時拒絕，不改用 main／latest。此修正的 WSL 驗證見 [本機驗證紀錄](validation-wsl-2026-11-09.md)。WSL 是另一個環境，不能假定 Windows 的規則與登入已在其中可用。缺少時依裝置同步流程補明列的指南，避免重複 init。
 
 ```sh
 calcifer init --project taskboard-routed \

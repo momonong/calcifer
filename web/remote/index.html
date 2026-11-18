@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light"><title>卡西法 · 遠端工作台</title><link rel="stylesheet" href="/calcifer/app.css"><script type="module" src="/calcifer/app.mjs"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light"><title>Wisp · 舊版 CLI 遠端工作台</title><link rel="stylesheet" href="/calcifer/app.css"><script type="module" src="/calcifer/app.mjs"></script></head>
 <body>
  <section id="login" class="login" aria-labelledby="login-title">
-  <div class="wordmark">CALCIFER <span>遠端工作台</span></div>
+  <div class="wordmark">Wisp <span>舊版 CLI 遠端工作台</span></div>
   <h1 id="login-title">接續你的工作。</h1>
   <p>手機和電腦共用同一段工作。檔案、模型與測試都留在開發主機上執行。</p>
   <form id="login-form"><label for="password">遠端登入密碼</label><input id="password" type="password" autocomplete="current-password" required minlength="12" maxlength="256"><label for="device">這台裝置的名稱</label><input id="device" autocomplete="off" maxlength="80" placeholder="例如：我的手機" value="我的瀏覽器"><button class="primary" type="submit">登入工作台</button></form>
   <p id="login-error" role="alert"></p><p class="subtle">密碼由主機上的 <code>calcifer remote password</code> 設定；不使用模型供應商的帳號密碼。</p>
  </section>
  <div id="workspace" class="workspace" hidden>
-  <header class="topbar"><a href="/calcifer/" class="brand">卡西法<span>CALCIFER</span></a><span id="connection" role="status">正在連線</span><button id="logout" class="quiet">登出</button></header>
+  <header class="topbar"><a href="/calcifer/" class="brand">Wisp<span>遠端工作台</span></a><span id="connection" role="status">正在連線</span><button id="logout" class="quiet">登出</button></header>
   <aside class="sidebar"><label for="project">目前專案</label><select id="project"></select><p id="host" class="subtle"></p><div class="sidebar-note">對話可遠端操作<br>工作由主機繼續執行</div><button id="logout-all" class="quiet">登出所有裝置</button></aside>
   <main class="sheet">
    <div class="project-heading"><div><p class="eyebrow">專案工作階段</p><h1 id="project-name">載入中</h1></div><button id="refresh" class="quiet">重新同步</button></div>

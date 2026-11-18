@@ -1,8 +1,8 @@
 > 本頁保留 Thor 驗收案例與舊入口。通用用法及 Codex／agy 選擇請讀 [project-cli.md](project-cli.md)。Thor 不是產品固定專案。
 
-# 用 Calcifer 開發 Thor
+# Wisp｜舊版 CLI 的 Thor 驗收案例
 
-這個終端入口保留同一份隔離工作區與模型對話，接受自然語言需求，讓模型改檔，再由 Calcifer 跑 Python 測試並匯出累積 patch。實際執行後端是 **Antigravity CLI 1.5.3 / Gemini 4 Argon Medium**；OpenCode / Pi 比較底座保留，這不是它們的真實模型驗收。
+早期的 `calcifer` 終端入口保留同一份隔離工作區與模型對話，接受自然語言需求，讓模型改檔，再跑 Python 測試並匯出累積 patch。本案例的執行後端是 **Antigravity CLI 1.5.3 / Gemini 4 Argon Medium**。OpenCode／Pi 的比較另有驗收紀錄。
 
 ## 日常使用
 
