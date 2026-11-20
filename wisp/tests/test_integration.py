@@ -9,34 +9,12 @@ import unittest
 from unittest.mock import patch
 
 from test_core import WorkflowTests, load_core
+from wisp.smoke import response
 
 REPO = Path(__file__).resolve().parents[2]
 RUNTIME = {'bun': str(REPO/'node_modules/.bin/bun'), 'sdk': str(REPO/'node_modules/@opencode/sdk/dist/index.js'),
     'worker': str(REPO/'wisp/executors/opencode-worker.mjs'), 'protocol': 'responses',
     'bun_version':'1.4.4', 'opencode_version':'2.1.4'}
-
-
-def response(index, args=None):
-    """Recorded wire shape, not a provider call or a model-quality evaluation."""
-    ident = f'resp_{index}'
-    item = ({'id':f'fc_{index}', 'type':'function_call', 'call_id':f'call_{index}', 'name':'wisp_workspace',
-        'arguments':json.dumps(args), 'status':'completed'} if args else
-        {'id':f'msg_{index}', 'type':'message', 'role':'assistant', 'status':'completed',
-        'content':[{'type':'output_text','text':'Candidate prepared; review the check evidence.', 'annotations':[]}]})
-    base = {'id':ident,'object':'response','created_at':1,'model':'test-model','status':'in_progress','output':[]}
-    events = [{'type':'response.created','response':base},
-        {'type':'response.output_item.added','output_index':0,'item':{**item, 'arguments':''} if args else item}]
-    if args:
-        events += [{'type':'response.function_call_arguments.delta','item_id':item['id'],'output_index':0,'delta':item['arguments']},
-            {'type':'response.function_call_arguments.done','item_id':item['id'],'output_index':0,'arguments':item['arguments']}]
-    else:
-        events += [{'type':'response.output_text.delta','item_id':item['id'],'output_index':0,'content_index':0,
-            'delta':item['content'][0]['text']}]
-    events += [{'type':'response.output_item.done','output_index':0,'item':item},
-        {'type':'response.completed','response':{**base,'status':'completed','output':[item],
-            'usage':{'input_tokens':20,'output_tokens':10,'total_tokens':30}}}]
-    return {'status':200, 'headers':{'content-type':'text/event-stream'},
-        'body':''.join('event: '+e['type']+'\ndata: '+json.dumps(e)+'\n\n' for e in events)}
 
 
 @unittest.skipUnless(os.getenv('WISP_OFFLINE_INTEGRATION') == '1', 'explicit offline subprocess/sandbox integration opt-in')
@@ -50,13 +28,13 @@ class IntegrationTests(WorkflowTests):
         for thread in self.threads: thread.join(5)
         super().tearDown()
 
-    def start(self, transport, *, max_requests=None):
+    def start(self, transport, *, max_requests=None, provider='hermes-openai-codex'):
         from wisp_test_core.executor import run_task
         def launch(task):
             thread=threading.Thread(target=run_task,args=(self.service,task['objective_id'],task['approval_version'],RUNTIME,transport))
             thread.start(); self.threads.append(thread)
         self.service.launch=launch
-        task=self.proposal()
+        task=self.proposal(provider=provider)
         if max_requests is not None:
             self.service.store.update(task['objective_id'], lambda t: t['limits'].update(max_requests=max_requests), event='fixture-limit')
         self.service.approve('chat-a',task['objective_id'],1)
@@ -111,6 +89,49 @@ class IntegrationTests(WorkflowTests):
         history=budgets(calls[-1])
         self.assertTrue(any(b['requests_remaining']==3 for b in history),history)
         self.assertTrue(any(b['requests_remaining']==1 for b in history),history)
+
+    def test_direct_api_worker_checks_applies_and_reopens(self):
+        import httpx
+        from wisp_test_core.provider import OpenAIAPITransport
+
+        calls = []
+        steps = [
+            {'action':'read', 'path':'app.py'},
+            {'action':'replace', 'path':'app.py', 'old_text':'answer = 1', 'new_text':'answer = 2'},
+            {'action':'check', 'command_id':'test'},
+            None,
+        ]
+        def send(request):
+            calls.append(request)
+            reply = response(len(calls), steps[len(calls)-1])
+            return httpx.Response(reply['status'], headers=reply['headers'], text=reply['body'])
+
+        client_factory = httpx.Client
+        def mock_client(**kwargs):
+            return client_factory(transport=httpx.MockTransport(send), **kwargs)
+
+        with patch('httpx.Client', side_effect=mock_client):
+            ident = self.start(OpenAIAPITransport('test-model', 'sk-test-fixture'),
+                               max_requests=4, provider='hermes-openai-api')
+            task = self.wait_for(ident, {'WAITING_APPROVAL', 'FAILED', 'TERMINATION_UNKNOWN'})
+            self.assertEqual(task['status'], 'WAITING_APPROVAL', task)
+            self.service.decide_check('chat-a', ident, 1, task['permissions'][-1]['id'], True)
+            task = self.wait_for(ident, {'REVIEW', 'FAILED', 'TERMINATION_UNKNOWN'})
+
+        self.assertEqual(task['status'], 'REVIEW', task)
+        self.assertEqual(task['requests_used'], 4)
+        self.assertIn('check passed', task['checks'][0]['stdout'])
+        self.assertIn('+answer = 2', task['diff'])
+        for request in calls:
+            self.assertEqual(str(request.url), 'https://api.openai.com/v1/responses')
+            self.assertNotIn(b'sk-test-fixture', request.content)
+        self.service.accept('chat-a', ident, 1)
+        preview = self.service.preview_apply('chat-a', ident, 1)
+        self.service.apply('chat-a', ident, 1, preview['token'])
+        self.assertEqual((self.repo/'app.py').read_text(), 'answer = 2\n')
+        reopened = self.Service(self.root/'state').snapshot('chat-a', ident)
+        self.assertEqual(reopened['integration']['status'], 'APPLIED')
+        self.assertEqual(reopened['diff'], task['diff'])
 
     def wait_for(self, ident, states, timeout=15):
         until=time.monotonic()+timeout

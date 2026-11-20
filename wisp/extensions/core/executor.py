@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-from .provider import create_transport, supports_provider, MAX_WIRE
+from .provider import MAX_WIRE, OpenAIAPITransport, create_transport, read_openai_api_key, supports_provider
 from .service import ACTIVE, Service, require
 from .platform_support import require_support
 
@@ -131,6 +131,8 @@ def reconcile(service, task):
 def launch_worker(service, task, runtime, *, hermes_home):
     require(supports_provider(task.get('provider')), 'PROVIDER_NOT_AVAILABLE')
     require_support(runtime)
+    if task['provider'] == OpenAIAPITransport.provider_id:
+        read_openai_api_key(hermes_home)
     _launch_owner(service, task, runtime, hermes_home=hermes_home)
 
 
@@ -164,7 +166,8 @@ def _launch_owner(service, task, runtime, *, hermes_home):
 
 def run_task(service, ident, version, runtime, transport=None):
     task = service._active(ident, version)
-    transport = transport if transport is not None else create_transport(task['provider'],task['model'])
+    if transport is None:
+        transport = create_transport(task['provider'], task['model'], reasoning_effort=task.get('reasoning_effort'))
     require_support(runtime)
     control = service.candidate(ident).parent / 'opencode'
     control.mkdir(mode=0o700, exist_ok=True)
@@ -263,7 +266,7 @@ def run_task(service, ident, version, runtime, transport=None):
                     service.finish_request(ident, version, message['id'], 'completed' if result['status']==200 else 'failed')
                     if result['status'] != 200:
                         code = 'PROVIDER_REFUSED_' + str(result['status'])
-                        if result['status'] in (401, 403, 429):
+                        if result['status'] in (400, 401, 403, 404, 422, 429):
                             host_stop = code
                         raise ValueError(code)
                 else:

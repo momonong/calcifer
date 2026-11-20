@@ -109,7 +109,8 @@ try {
         try {
             $names = @($zip.Entries | ForEach-Object { $_.FullName })
             $allowed = @('launcher.py','install.py','wisp.ps1','wisp.cmd','README.md','manifest.json')
-            if ($names.Count -ne $allowed.Count -or @($names | Select-Object -Unique).Count -ne $names.Count) { throw 'Unexpected archive entries.' }
+            if (@($allowed | Where-Object { $_ -notin $names }).Count -or @($names | Select-Object -Unique).Count -ne $names.Count) { throw 'Unexpected archive entries.' }
+            $allowed += 'smoke.py'
             foreach ($entry in $zip.Entries) { if ($entry.FullName -notin $allowed -or $entry.Length -gt 1048576) { throw 'Unexpected archive entry.' } }
         } finally { $zip.Dispose() }
         $Source = Join-Path $temporary 'payload'
@@ -120,7 +121,8 @@ try {
     $manifest = Get-Content -LiteralPath $manifestFile -Raw -Encoding UTF8 | ConvertFrom-Json
     $names = @($manifest.files.PSObject.Properties.Name)
     $expected = @('launcher.py','install.py','wisp.ps1','wisp.cmd','README.md')
-    if ($manifest.version -ne $releaseVersion -or $names.Count -ne $expected.Count) { throw 'Unexpected release manifest.' }
+    if ($manifest.version -ne $releaseVersion -or @($expected | Where-Object { $_ -notin $names }).Count) { throw 'Unexpected release manifest.' }
+    $expected += 'smoke.py'
     foreach ($name in $names) {
         if ($name -notin $expected) { throw 'Unexpected manifest filename.' }
         $file = Join-Path $Source $name
@@ -202,6 +204,11 @@ try {
 #!/usr/bin/env bash
 set -euo pipefail
 wisp_bin="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+wisp_router="$wisp_bin/../git-bash-router.bash"
+if [[ ${WISP_BASH_ROUTER_ACTIVE:-0} != 1 && -f "$wisp_router" ]]; then
+    export WISP_BASH_ROUTER_ACTIVE=1
+    exec /usr/bin/bash "$wisp_router" "$@"
+fi
 wisp_config="$(cygpath -w "$wisp_bin/../config.json")"
 wisp_entry="$(cygpath -w "$wisp_bin/../releases/@@RELEASE@@/wisp.ps1")"
 export WISP_CONFIG="$wisp_config"

@@ -36,7 +36,8 @@ sys.exit(int(os.environ.get('WISP_TEST_EXIT','0')))
         self.env = dict(os.environ, WISP_CONFIG=str(self.config), WISP_TEST_TRACE=str(self.trace))
 
     def run_cli(self, *args, **extra):
-        return subprocess.run([sys.executable,'-B',str(ROOT/'launcher.py'),*args],env={**self.env,**extra},capture_output=True,text=True)
+        return subprocess.run([sys.executable,'-B',str(ROOT/'launcher.py'),*args],
+                              env={**self.env,'PYTHONIOENCODING':'utf-8',**extra},capture_output=True,text=True,encoding='utf-8')
 
     def configure_desktop(self, exit_code=0):
         app=self.root/'desktop app 中文'; (app/'dist').mkdir(parents=True)
@@ -193,6 +194,20 @@ print('Hermes v0.23.1')
     def test_rejects_unrecognized_flags_without_calling_engine(self):
         result=self.run_cli('--yolo')
         self.assertNotEqual(result.returncode,0)
+        self.assertFalse(self.trace.exists())
+
+    def test_smoke_requires_explicit_offline_mode(self):
+        result=self.run_cli('smoke')
+        self.assertEqual(result.returncode,2)
+        self.assertIn('smoke 需要 --offline',result.stderr)
+        self.assertFalse(self.trace.exists())
+
+    @unittest.skipUnless(sys.platform=='linux','Wisp development worker runs on Linux')
+    def test_offline_smoke_requires_installed_core_without_starting_hermes(self):
+        self.configure_desktop()
+        result=self.run_cli('smoke','--offline')
+        self.assertEqual(result.returncode,1)
+        self.assertIn('wisp-core',result.stderr)
         self.assertFalse(self.trace.exists())
 
     def test_doctor_checks_engine_without_model_or_launch(self):

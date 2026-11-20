@@ -14,7 +14,7 @@ import sys
 import tempfile
 
 VERSION='0.1.4'
-PAYLOAD_FILES={'launcher.py','install.py','wisp.ps1','wisp.cmd','README.md'}
+PAYLOAD_FILES={'launcher.py','smoke.py','install.py','wisp.ps1','wisp.cmd','README.md'}
 
 
 def digest(data): return hashlib.sha256(data).hexdigest()

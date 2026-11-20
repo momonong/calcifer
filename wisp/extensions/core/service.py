@@ -7,7 +7,7 @@ import uuid
 
 from .store import Store
 from . import workspace as ws
-from .provider import supports_provider
+from .provider import OPENAI_REASONING_EFFORTS, OpenAIAPITransport, supports_provider
 from .platform_support import assess, require_ready
 
 ACTIVE = {'RUNNING', 'WAITING_APPROVAL'}
@@ -97,6 +97,10 @@ class Service:
         require(supports_provider(provider), 'PROVIDER_NOT_AVAILABLE')
         model = brief.get('model', '')
         require(isinstance(model, str) and model and len(model) <= 128 and all(c.isalnum() or c in '-._' for c in model), 'MODEL_REQUIRED')
+        effort = brief.get('reasoning_effort')
+        if effort is not None:
+            require(provider == OpenAIAPITransport.provider_id and effort in OPENAI_REASONING_EFFORTS,
+                    'OPENAI_REASONING_EFFORT_INVALID')
         task = {'objective_id': uuid.uuid4().hex, 'approval_version': 1, 'session_id': session_id,
             'objective': objective.strip(), 'repo': str(repo), 'read_paths': list(read_paths), 'allowed_paths': list(allowed_paths),
             'allowed_commands': ws.commands(brief.get('allowed_commands', [])), 'limits': limits, 'provider': provider, 'model': model,
@@ -106,6 +110,8 @@ class Service:
             'requests_used': 0, 'requests': [], 'seconds_used': 0, 'checks': [], 'permissions': [], 'completion': None,
             'native_session': None, 'feedback': [], 'diff': '', 'changes': [], 'process_status': None,
             'route': {'executor': 'opencode', 'reason': '跨檔案開發：完整目標交接一次，Hermes 保留對話入口。'}}
+        if effort is not None:
+            task['reasoning_effort'] = effort
         self.store.create(task)
         return self.public(task)
 

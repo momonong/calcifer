@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .service import Service
 from .executor import launch_worker, launch_verifier, reconcile
-from .provider import available_sources
+from .provider import HERMES_PROVIDERS, OPENAI_API_BASE_URL, OpenAIAPITransport, available_sources, direct_api_base_allowed
 from .platform_support import assess
 
 RUNTIME_FILE = Path(__file__).with_name('runtime.json')
@@ -49,12 +49,30 @@ def current_session():
     return session
 
 
-def current_model():
+def current_development_route(requested_model=None):
     from hermes_cli.config import load_config_readonly
-    model = (load_config_readonly() or {}).get('model', {})
-    if not isinstance(model, dict) or model.get('provider') != 'openai-codex':
-        raise ValueError('首個整合版本需明確選用 Hermes 的 ChatGPT／Codex 來源；其他來源尚未接入，不會自動改用。')
-    return model.get('default') or model.get('name') or ''
+    config = load_config_readonly() or {}
+    model = config.get('model', {})
+    provider = model.get('provider') if isinstance(model, dict) else None
+    if not isinstance(provider, str) or provider not in HERMES_PROVIDERS:
+        raise ValueError('請在 Hermes 明確選用 ChatGPT／Codex 訂閱或 OpenAI API。')
+    route = HERMES_PROVIDERS[provider]
+    selected = requested_model or model.get('default') or model.get('name') or ''
+    if not isinstance(selected, str):
+        raise ValueError('MODEL_REQUIRED')
+    effort = None
+    if route == OpenAIAPITransport.provider_id:
+        if not direct_api_base_allowed(model.get('base_url') or ''):
+            raise ValueError('OPENAI_API_BASE_URL_REFUSED')
+        from hermes_constants import resolve_reasoning_config
+        reasoning = resolve_reasoning_config(config, selected)
+        if reasoning is not None:
+            # Use the same model-specific wire vocabulary as Hermes' Responses transport.
+            from agent.transports.codex import _resolve_reasoning
+            effort, _ = _resolve_reasoning(selected, {
+                'reasoning_config': reasoning, 'provider': provider, 'base_url': OPENAI_API_BASE_URL,
+            })
+    return route, selected, effort
 
 
 def current_project():

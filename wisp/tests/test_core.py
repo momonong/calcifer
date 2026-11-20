@@ -35,12 +35,12 @@ class WorkflowTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def proposal(self, **kwargs):
+    def proposal(self, *, provider='hermes-openai-codex', **kwargs):
         return self.service.propose('chat-a', str(self.repo), {
             'objective': 'Make the answer two', 'read_paths': ['app.py', 'test.py'],
             'allowed_paths': ['app.py'],
             'allowed_commands': [{'id': 'test', 'argv': ['python3', '-B', 'test.py']}],
-            'model': 'test-model', 'provider': 'hermes-openai-codex',
+            'model': 'test-model', 'provider': provider,
         }, **kwargs)
 
     def test_delegated_work_keeps_authorization_and_does_not_claim_gui_acceptance(self):

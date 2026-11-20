@@ -8,7 +8,7 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parent
 VERSION='0.1.4'
-FILES=['launcher.py','install.py','wisp.ps1','wisp.cmd','README.md']
+FILES=['launcher.py','smoke.py','install.py','wisp.ps1','wisp.cmd','README.md']
 
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--out',type=Path,required=True)
