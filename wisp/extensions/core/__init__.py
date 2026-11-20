@@ -1,7 +1,7 @@
 """Hermes tools can propose/read tasks. Only GUI actions authorize execution."""
 import json
 
-from .runtime import get_service, current_session, current_model, current_project, snapshots, overview
+from .runtime import get_service, current_session, current_development_route, current_project, snapshots, overview
 
 POLICY = '''Wisp 開發流程：日常對話與小型唯讀問題直接回答。使用者要求跨檔案開發時，先用 wisp_propose 提出精確檔案與驗收命令，並輸出工具回傳的 ::wisp-task 指令，讓人類在同一畫面批准。提案不代表已批准；不要改用 terminal 或其他工具代替尚未批准的 OpenCode 工作。OpenCode 接手完整開發目標，勿每個檔案重新派發。用 wisp_status 查實際進度／結果，project=true 可查當前專案已獲准的接續摘要；不得自行開啟跨對話分享。UNKNOWN 不能當成功，也不得重派。候選接受與原專案套回分開，套回與撤回都由任務卡明確批准，模型不可代按或繞過。完成摘要要附 objective_id／來源，新的工作只提出建議。'''
 POLICY += ' wisp_status 的 overview=true 可讀來源接點與本對話的 Wisp 工作者請求帳本；不是帳戶配額、費用或所有工具的總用量。設定存在不代表登入有效；未接入的來源不得宣稱可派發。'
@@ -25,10 +25,10 @@ STATUS = {'name':'wisp_status','description':'唯讀取得當前對話的 Wisp �
 
 def propose(args, **kwargs):
     try:
-        from agent.runtime_cwd import resolve_agent_cwd
         session = current_session()
-        brief = {**args, 'provider':'hermes-openai-codex', 'model':args.get('model') or current_model()}
-        task = get_service().propose(session, str(resolve_agent_cwd()), brief)
+        provider, model, effort = current_development_route(args.get('model'))
+        brief = {**args, 'provider':provider, 'model':model, 'reasoning_effort':effort}
+        task = get_service().propose(session, current_project(), brief)
         return json.dumps({'task':task,'card':f'::wisp-task{{id="{task["objective_id"]}"}}','next':'請在 Wisp 任務卡核對範圍並批准，尚未派發。'}, ensure_ascii=False)
     except (ValueError, OSError) as error:
         return json.dumps({'error':str(error)}, ensure_ascii=False)

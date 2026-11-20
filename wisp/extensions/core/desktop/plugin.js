@@ -88,6 +88,8 @@ function actionFailure(error){
     ['BUDGET_EXHAUSTED','本任務已達請求或時間上限。請先核對現有候選與收據，不重置額度。'],
     ['TASK_DEADLINE','本任務已達時間上限。請核對現有候選與收據。'],
     ['REQUEST_UNSETTLED','有請求結果尚未確認。請保留原收據並確認狀態，不要重送。'],
+    ['OPENAI_API_KEY_REQUIRED','請在這個 Hermes profile 設定 OpenAI API key。這次未發出模型請求。'],
+    ['OPENAI_API_BASE_URL_REFUSED','請在這個 Hermes profile 選擇官方 OpenAI API 端點。'],
     ['WORKER_STILL_RUNNING','工作者仍在執行。請等候完成或透過任務卡取消，再核對停止狀態。'],
     ['APPLY_IN_PROGRESS','同一專案正在套用或回復。請先查看該操作的收據。'],
     ['CHECKS_REQUIRED','目前候選尚未通過必要驗收。請先核對驗收命令與結果。']
@@ -99,7 +101,11 @@ function control(label,onClick,{primary=false,disabled=false}={}){
 }
 function details(title,children,open=false){return h('details',{open,style:{marginTop:'12px'}},h('summary',{style:{cursor:'pointer',fontWeight:600}},title),children);}
 
-function sourceLabel(provider){return provider==='hermes-openai-codex'?'Hermes 的 ChatGPT／Codex 訂閱':`尚未辨識的來源：${provider??'未指定'}`;}
+function sourceLabel(provider){
+  if(provider==='hermes-openai-codex')return 'Hermes 的 ChatGPT／Codex 訂閱';
+  if(provider==='hermes-openai-api')return 'OpenAI API';
+  return `尚未辨識的來源：${provider??'未指定'}`;
+}
 function capabilityMessage(value){
   if(!value)return '尚未取得執行前置檢查結果，請重新整理任務。';
   if(value.ready)return '檔案與版本前置檢查通過';
@@ -196,7 +202,7 @@ export function TaskCard({task,act,busy,copyPatch}){
       h('strong',null,labels[task.status]??task.status),h('span',{style:muted},`批准版本 ${task.approval_version}`)),
     h('p',{style:{...wrap,fontSize:'15px',margin:'10px 0'}},objectivePreview(task.objective)),
     task.objective.length>180&&details('完整交辦與限制',h('p',{style:{...wrap,whiteSpace:'pre-wrap'}},task.objective)),
-    h('p',{style:{...muted,margin:'4px 0'}},`OpenCode · ${task.model} · 請求額度 ${task.requests_used} / ${task.limits.max_requests}（含已保留）`),
+    h('p',{style:{...muted,margin:'4px 0'}},`OpenCode · ${task.model}${task.reasoning_effort?` · 推理 ${task.reasoning_effort}`:''} · 請求額度 ${task.requests_used} / ${task.limits.max_requests}（含已保留）`),
     details('工作範圍與上限',h('div',{style:wrap},
       h('p',null,'來源：',task.repo),h('p',null,'可修改：',task.allowed_paths.join('、')),
       details(`可讀取範圍 · ${task.read_paths.length} 個檔案`,h('ul',null,...task.read_paths.map(name=>h('li',{key:name},h('code',null,name))))),

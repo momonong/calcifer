@@ -105,13 +105,19 @@ def safe_output(text: str) -> str:
 
 def main(argv=None) -> int:
     parser=argparse.ArgumentParser(prog='wisp',description='開啟 Wisp：沿用 Hermes 的原生對話、工具與開發介面。')
-    parser.add_argument('command',nargs='?',choices=['open','desktop','webapp','status','doctor','prepare'],default='open')
+    parser.add_argument('command',nargs='?',choices=['open','desktop','webapp','status','doctor','prepare','smoke'],default='open')
     parser.add_argument('--no-open',action='store_true',help='只在自己的終端顯示一次性登入連結；請勿分享')
+    parser.add_argument('--offline',action='store_true',help='執行 smoke 的隔離離線案例')
     parser.add_argument('--version',action='version',version=f'Wisp {VERSION}')
     args=parser.parse_args(argv)
     if args.no_open and args.command not in ('open','webapp'): parser.error('--no-open 只用於開啟 Webapp')
+    if args.command=='smoke' and not args.offline: parser.error('smoke 需要 --offline')
+    if args.offline and args.command!='smoke': parser.error('--offline 只用於 smoke')
     try:
         path=config_path(); config=load_config(path)
+        if args.command=='smoke':
+            plugin=Path(config['hermes_home'])/'plugins/wisp-core'
+            return subprocess.call([sys.executable,'-I','-B',str(Path(__file__).with_name('smoke.py')),str(plugin)])
         if args.command=='desktop' or (args.command=='open' and config.get('desktop') and not args.no_open):
             return open_desktop(config)
         if args.command in ('open','webapp','prepare'):

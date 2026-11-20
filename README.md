@@ -2,11 +2,12 @@
 
 Wisp 是日常與開發共用的個人助理，沿用官方 Hermes Desktop、Webapp 與 agent 引擎。
 
-**目前原始碼版本為 Wisp 0.1.4 預覽版。** Ubuntu 設定桌面後，`wisp` 開啟官方 Hermes Desktop；`wisp webapp` 保留瀏覽器入口。沒有桌面設定的安裝與 Windows 繼續使用 Webapp。安裝器保留既有 profile、登入與設定；資料分離不等於 OS 沙箱。
+**目前原始碼版本為 Wisp 0.1.4 預覽版。** Ubuntu 設定桌面後，`wisp` 開啟官方 Hermes Desktop。Windows 的標準安裝預設開啟 Webapp。5090 筆電已另行配置 Git Bash，輸入 `wisp` 即開啟 Windows 原生桌面，連到本機 WSL2 開發後端。`wisp desktop` 與 `wisp webapp` 仍可開啟原 Windows profile 的對話。
 
 - [安裝與下載](https://momonong.me/sites/wisp/)：目前仍是已部署的 **0.1.3**，與本次 Git 交付分開。
 - [安裝包使用說明](wisp/README.md)：首次準備、重裝、資料位置與回復。
 - [Wisp 開發流程](docs/wisp-opencode-workflow.md)：選用的 OpenCode 開發插件、驗收與套回。從原始碼安裝。
+- [5090 開發成果與接續說明](docs/handoffs/wisp-wsl-development-2026-11-21.md)記錄了桌面入口、OpenAI API 與離線驗收，也列出下一階段待驗的使用情境。
 - [Wisp 0.1.4 交付範圍與版本對齊](docs/wisp-preview-0.1.4.md)：建置、驗證與回復方式。
 - [Wisp、Hermes 與 OpenCode 功能界線](docs/wisp-feature-comparison.md)：哪些是新增、哪些直接沿用。
 - [Wisp 0.1.3 歷史交付](docs/wisp-preview-0.1.3.md)：保留原版本的證據。
@@ -17,7 +18,7 @@ wisp doctor
 wisp status
 ```
 
-Windows 原生安裝、Webapp 建置、供應商登入、基本對話與立即重開同一對話已有使用者回報。Ubuntu 的隔離開發案例已完成實作、退回修正、40 項測試、接受套用與重開接續；桌面入口已由使用者確認。Windows 完整開發／Desktop、第二供應商切換及 OS 通知仍有未驗證項目。
+Windows 原生安裝、Webapp 建置、供應商登入、基本對話與立即重開同一對話已有使用者回報。5090 的 WSL2 範例已用 OpenAI API 完成修改、驗收與套回，並能從重開的桌面讀回結果。另一台 Ubuntu 的隔離案例已完成退回修正、40 項測試、5 檔套用與重開。Windows 原生 worker、跨供應商切換及 OS 通知仍待實機驗證。
 
 早期 CLI 以 Calcifer 名稱發行。它的版本、`calcifer` 命令與 Node 套件識別碼獨立於現行 Wisp 入口。
 

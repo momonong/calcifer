@@ -6,7 +6,7 @@ import sys
 import tempfile
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from test_core import CORE, load_core
 
@@ -75,9 +75,48 @@ class SourcesUsageTests(unittest.TestCase):
         self.assertEqual(result['hermes_default']['provider'],config['model']['provider'])
         self.assertEqual(result['hermes_default']['model'],'hydrogen-medium')
         self.assertFalse(result['authentication_checked'])
-        self.assertEqual(result['development_sources'],[{'id':'hermes-openai-codex','label':'ChatGPT／Codex 訂閱','protocol':'responses'}])
+        self.assertEqual(result['development_sources'],[
+            {'id':'hermes-openai-codex','label':'ChatGPT／Codex 訂閱','protocol':'responses'},
+            {'id':'hermes-openai-api','label':'OpenAI API','protocol':'responses'},
+        ])
         self.assertFalse(result['automatic_fallback'])
         self.assertNotIn('SECRET',json.dumps(result))
+
+    def test_proposal_persists_configured_provider_even_with_explicit_model(self):
+        import wisp_test_core
+
+        brief = {'objective':'fixture', 'read_paths':['app.py'], 'allowed_paths':['app.py'], 'model':'approved-model'}
+        config = {'model':{'provider':'openai-api', 'default':'profile-model'},
+                  'agent':{'reasoning_effort':{'enabled':True, 'effort':'low'},
+                           'reasoning_overrides':{'approved-model':'high'}}}
+        fake = types.ModuleType('hermes_cli.config')
+        fake.load_config_readonly = lambda: config
+        constants = types.ModuleType('hermes_constants')
+        constants.resolve_reasoning_config = Mock(return_value={'enabled':True, 'effort':'high'})
+        responses = types.ModuleType('agent.transports.codex')
+        responses._resolve_reasoning = Mock(return_value=('high', True))
+        with patch.dict(sys.modules, {'hermes_cli.config':fake, 'hermes_constants':constants,
+                                      'agent.transports.codex':responses}), \
+             patch.object(wisp_test_core,'get_service',return_value=self.service), \
+             patch.object(wisp_test_core,'current_session',return_value='chat-a'), \
+             patch.object(wisp_test_core,'current_project',return_value=str(self.repo)):
+            result = json.loads(wisp_test_core.propose(brief))
+            self.assertIn('task', result, result)
+            self.assertEqual(result['task']['provider'], 'hermes-openai-api')
+            self.assertEqual(result['task']['model'], 'approved-model')
+            self.assertEqual(result['task']['reasoning_effort'], 'high')
+            constants.resolve_reasoning_config.assert_called_once_with(config, 'approved-model')
+            config['agent'] = {'reasoning_effort':False}
+            constants.resolve_reasoning_config.return_value = {'enabled':False}
+            responses._resolve_reasoning.return_value = ('none', False)
+            disabled = json.loads(wisp_test_core.propose(brief))
+            self.assertEqual(disabled['task']['reasoning_effort'], 'none')
+            responses._resolve_reasoning.return_value = (None, False)
+            plain = json.loads(wisp_test_core.propose({**brief, 'model':'gpt-4.1'}))
+            self.assertNotIn('reasoning_effort', plain['task'])
+            config['model']['provider'] = 'unknown'
+            self.assertIn('error', json.loads(wisp_test_core.propose(brief)))
+        self.assertEqual(len(self.service.store.list('chat-a')), 3)
 
     def test_usage_counts_all_history_and_never_includes_other_sessions(self):
         self.assertTrue(callable(getattr(self.service,'usage',None)))

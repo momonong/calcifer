@@ -45,9 +45,9 @@ Hermes 保留原對話、日常助理與工具；Wisp 擁有開發任務、批�
 
 ## 限制與保護
 
-- **已驗證平台**：Ubuntu x64、Hermes 0.23.2、Bun 1.4.4、OpenCode SDK 2.1.4。安裝器、GUI、工作者共用前置檢查；不支援平台、缺少隔離工具或無效固定 runtime 時，啟動前拒絕並保留提案。Windows 舊聊天入口保留，新 worker 尚未移植。
+- **已驗證平台**。Ubuntu x64 與 5090 筆電上的 Ubuntu WSL2 使用 Linux worker、Bun 1.4.4 和 OpenCode SDK 2.1.4。Hermes 0.23.2 已跑過真實模型開發範例，5090 升至 0.23.3 後亦通過離線驗收。安裝器、GUI 與工作者共用前置檢查。缺少隔離工具或有效 runtime 時，會在啟動前保留提案。Windows 原生 worker 仍待移植。
 - **檢查界線**：檔案與版本前置檢查不主動測 kernel／AppArmor／user namespace。實際驗收仍使用原 Linux 隔離；不自動調整系統設定。離線驗收不依賴模型 runtime。
-- **模型**：目前只有 `hermes-openai-codex` transport，使用本 profile 已有的 ChatGPT／Codex 登入；token 不交給 OpenCode。agy、Broker、自架模型尚未接入，不靜默 fallback。
+- **模型**：支援 `hermes-openai-codex`（Hermes 的 ChatGPT／Codex 訂閱）與 `hermes-openai-api`（OpenAI Responses API）。提案依 Hermes profile 所選的供應商建立，已批准的任務保留其供應商和模型。OpenCode worker 只收到主機轉送的回應。agy、Broker、自架模型尚未接入，不靜默 fallback。
 - **候選範圍**：最多 64 個明列 UTF-8 檔、每檔 256 KiB、總計 2 MiB，拒絕隱藏／秘密檔名、symlink、binary、越界。這適合小型明確任務，尚不能接任意大型 repo。
 - **編輯**：`replace` 要唯一精確匹配；`replace_many` 同一檔最多 16 段，全部預驗後單次寫入，任一失敗則零修改。`edit` 可新增／整檔寫入。`search` 為 literal，提供 path 時只查核定檔。
 - **檢查**：支援 `python3`／`python`／`node`／`npm` 精確 argv，不安裝依賴、不接網路或正式資料。輸出每串流約 16 KiB 保留頭尾；截斷明示，超過每串流 1 MiB 或時間上限停止。
@@ -57,6 +57,10 @@ Hermes 保留原對話、日常助理與工具；Wisp 擁有開發任務、批�
 - **記憶**：帶來源的任務／批准／進度摘要；分享只在同 profile、同 repo。沒有跨專案知識圖譜、偏好自動學習、排程提醒或統一用量頁。
 
 取消尚未提交的 reservation 可阻止派發；已提交的 in-flight 請求可能仍被供應商處理或扣額度。本機程序停止不等於遠端撤銷。原生 Hermes 的其他工具仍沿用原權限，本插件不是整個主程序的 OS 沙箱。
+
+## OpenAI API 設定
+
+在 Wisp 專用 Hermes profile 執行 `hermes model`，選 **OpenAI → OpenAI API**，在隱藏提示輸入該組織的 API key，再選擇支援 Responses API 與工具呼叫的模型。Wisp 從同一 profile 的 `.env` 讀取 `OPENAI_API_KEY`，並固定使用 `https://api.openai.com/v1/responses`。使用贈額時，請在 API 平臺的 Credit grants 核對組織、剩餘額度及到期日。
 
 ## 安裝及更新插件
 
@@ -72,7 +76,7 @@ python3 -B wisp/install-core.py --hermes-home /完整路徑/Wisp專用HermesHome
 
 ## 驗證界線
 
-Ubuntu Webapp 有操作者協助的任務交付與重開接續驗證。下列回歸使用合成模型事件，另檢查真實 Linux 隔離。Windows 原生工作者和 WSL 完整安裝仍待驗收。
+Ubuntu Webapp 有操作者協助的任務交付與重開接續驗證。5090 的 Windows 原生桌面也已連到 WSL2，開啟原任務查看 Diff 與套回結果。Git Bash 的 `wisp smoke --offline` 使用合成模型回應，在真實 Linux 隔離環境執行測試，另開程序核對同一任務。全新 Windows 機器從公開安裝包重建此組合仍待驗收。[5090 實機紀錄與範例來源](handoffs/wisp-wsl-development-2026-11-21.md)
 
 操作錯誤會保留至下一次明確操作或「關閉操作提示」，背景更新不會清掉。來源改變時先比對 Diff，候選改變時重驗；未確認結果先查原收據，不盲目重送。切換對話不沿用舊錯誤或成功提示。專案摘要核對已消失的 worker，UNKNOWN 保留而不重派。
 

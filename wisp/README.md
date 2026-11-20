@@ -1,6 +1,6 @@
 # Wisp 0.1.4 預覽版
 
-輸入 `wisp`，開啟設定的官方 Hermes 介面。Linux 已設定 `desktop` 時開啟獨立桌面；沒有桌面設定的安裝與 Windows 仍開啟 Webapp。日常對話、專案與開發工具沿用 Hermes。Wisp 提供啟動、安裝與診斷入口。
+輸入 `wisp`，開啟設定的官方 Hermes 介面。Linux 已設定 `desktop` 時開啟獨立桌面。Windows 標準安裝預設開啟 Webapp。另有經 5090 筆電實測的 Git Bash 設定，可開啟 Windows 原生桌面並連到 WSL2 的開發後端。日常對話、專案與開發工具沿用 Hermes。[5090 的入口、設定範例與驗收紀錄](../docs/handoffs/wisp-wsl-development-2026-11-21.md)
 
 原始碼另提供選用的 **Wisp 開發流程插件**。它在 Hermes 對話中管理任務批准，用 OpenCode SDK 產生候選修改，支援 Diff、離線驗收、套回、撤回與接續。Ubuntu Webapp 有操作者協助的交付驗證。安裝方式、執行限制和驗收方法見 [Wisp 開發流程](../docs/wisp-opencode-workflow.md)。
 
@@ -55,6 +55,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& (Join-Path $env:TE
 
 完成後關閉整個 Git Bash／Windows Terminal，再從開始功能表開啟新終端，輸入 `wisp doctor`、`wisp`。只新增使用者 PATH，不改系統 PATH。Git Bash 的 `wisp` 與 PowerShell／CMD 的 `wisp.cmd` 共用同一安裝、設定與登入。Windows 套件仍標預覽，實機驗收另記。
 
+若 Windows 安裝目錄有使用者自行設定的 `git-bash-router.bash`，Git Bash 的 `wisp` 會將參數交給它。直接執行入口也會讀取此設定。路由腳本可再呼叫原入口，以處理沿用的命令。
+
 ### Windows 第一次使用與接續
 
 1. `wisp doctor` 應顯示實際安裝的 Wisp 版本、已設定的 Hermes 路徑與版本。
@@ -79,9 +81,12 @@ bash "$(cygpath -u "$LOCALAPPDATA")/Wisp/bin/wisp" doctor
 | `wisp webapp` | Linux：明確開啟瀏覽器介面；保留同一 profile |
 | `wisp status` | 查 gateway／Webapp 狀態；不啟動服務 |
 | `wisp doctor` | 查設定路徑及 Hermes 版本；不發送模型請求 |
+| `wisp smoke --offline` | Linux／WSL：用隔離範例檢查 Diff、測試、套回及新程序讀回 |
 | `wisp prepare` | 準備獨立依賴與官方 Webapp；Linux 每個長步驟最長 20 分鐘 |
 | `wisp --no-open` | Linux：在私人終端顯示一次性登入連結 |
 | `wisp -NoOpen` | Windows：同上；不要分享或貼到聊天 |
+
+離線 smoke 使用已安裝的 wisp-core、OpenCode 與 Bun。每次建立新的 `/tmp/wisp-smoke-*`，將範例、任務資料庫及 `receipt.json` 留在這個目錄。它以固定回應驅動 OpenCode，用 Linux 隔離執行測試，套回範例後由新程序核對同一個任務的 Diff、測試與套回紀錄。通過會輸出 `WISP_SMOKE_OK` 和 `model_requests=0`。
 
 ### Linux 桌面設定與版本對齊
 

@@ -20,7 +20,7 @@ class PowerShellTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory(prefix='wisp ps 中文 '); self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name); self.source=self.root/'payload'; self.source.mkdir()
-        names=['launcher.py','install.py','wisp.ps1','wisp.cmd','README.md']
+        names=['launcher.py','smoke.py','install.py','wisp.ps1','wisp.cmd','README.md']
         for n in names:shutil.copyfile(ROOT/n,self.source/n)
         manifest={'version':'0.1.4','files':{n:hashlib.sha256((self.source/n).read_bytes()).hexdigest() for n in names}}
         (self.source/'manifest.json').write_text(json.dumps(manifest))
@@ -87,6 +87,19 @@ sys.exit(int(os.environ.get('WISP_TEST_EXIT','0')))
         r=self.install();self.assertNotEqual(r.returncode,0)
         self.assertEqual(command.read_text(),'another tool')
         self.assertFalse((self.prefix/'config.json').exists())
+
+    def test_git_bash_entry_runs_local_router_without_shell_startup(self):
+        self.prefix=self.root/'Wisp with spaces'
+        result=self.install()
+        self.assertEqual(result.returncode,0,result.stderr)
+        router=self.prefix/'git-bash-router.bash'
+        router.write_text('printf "%s %s\\n" "$WISP_BASH_ROUTER_ACTIVE" "$*"\nexit 7\n')
+        entry=self.prefix/'bin/wisp'
+        result=subprocess.run(['bash','--noprofile','--norc',str(entry),'smoke','--offline'],
+                              env=self.env,capture_output=True,text=True,timeout=15)
+        self.assertEqual(result.returncode,7,result.stderr)
+        self.assertEqual(result.stdout,'1 smoke --offline\n')
+        self.assertFalse(self.trace.exists())
 
     def test_modified_git_bash_entry_blocks_reinstall(self):
         self.assertEqual(self.install().returncode,0)

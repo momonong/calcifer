@@ -3,6 +3,8 @@ import sys
 import tempfile
 import subprocess
 import time
+import json
+import types
 import unittest
 from unittest.mock import patch
 
@@ -40,6 +42,81 @@ class ExecutorTests(unittest.TestCase):
         self.assertNotIn('max_output_tokens', seen[0][1]['json'])
         self.assertNotIn('set-cookie', result['headers'])
         self.assertNotIn('Authorization', seen[0][1].get('headers', {}))
+
+    def test_direct_api_uses_profile_key_and_fixed_streaming_responses_endpoint(self):
+        import httpx
+        from wisp_test_core.provider import create_transport
+
+        requests = []
+        def send(request):
+            requests.append(request)
+            return httpx.Response(200, headers={'content-type':'text/event-stream', 'set-cookie':'private'},
+                content=b'data: [DONE]\n\n')
+
+        secrets = types.ModuleType('agent.secret_scope')
+        seen_paths = []
+        def load_env_file(path):
+            seen_paths.append(path)
+            return {'OPENAI_API_KEY':'sk-profile-test-key'}
+        secrets.load_env_file = load_env_file
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {'agent.secret_scope':secrets}):
+            home = Path(tmp) / 'selected'
+            transport = create_transport('hermes-openai-api', 'approved-model', hermes_home=home,
+                                         reasoning_effort='high')
+            self.assertEqual(seen_paths, [home / '.env'])
+            client = httpx.Client(transport=httpx.MockTransport(send))
+            with patch('httpx.Client', return_value=client):
+                with self.assertRaisesRegex(ValueError, 'PROVIDER_ENDPOINT_MISMATCH'):
+                    transport({'url':'https://elsewhere.example/v1/responses', 'body':{'model':'approved-model'}}, 10)
+                with self.assertRaisesRegex(ValueError, 'PROVIDER_REQUEST_INVALID'):
+                    transport({'url':'https://wisp.invalid/v1/responses', 'body':{'model':'other'}}, 10)
+                result = transport({'url':'https://wisp.invalid/v1/responses',
+                    'body':{'model':'approved-model', 'input':[], 'store':True, 'max_output_tokens':8192,
+                            'reasoning':{'effort':'medium', 'summary':'auto'}, 'temperature':0.7}}, 10)
+
+        request, = requests
+        self.assertEqual((request.method, str(request.url)), ('POST', 'https://api.openai.com/v1/responses'))
+        self.assertEqual(request.headers['authorization'], 'Bearer sk-profile-test-key')
+        body = json.loads(request.content)
+        self.assertTrue(body['stream'])
+        self.assertFalse(body['store'])
+        self.assertIn('reasoning.encrypted_content', body['include'])
+        self.assertEqual(body['max_output_tokens'], 8192)
+        self.assertEqual(body['reasoning'], {'effort':'high', 'summary':'auto'})
+        self.assertNotIn('temperature', body)
+        self.assertEqual(result, {'status':200, 'headers':{'content-type':'text/event-stream'}, 'body':'data: [DONE]\n\n'})
+
+    def test_direct_api_rejects_redirect_without_forwarding_key_or_provider_error_body(self):
+        import httpx
+        from wisp_test_core.provider import OpenAIAPITransport
+
+        destinations = []
+        def redirect(request):
+            destinations.append(str(request.url))
+            return httpx.Response(307, headers={'location':'https://elsewhere.example'}, content=b'private response')
+
+        client = httpx.Client(transport=httpx.MockTransport(redirect), follow_redirects=True)
+        with patch('httpx.Client', return_value=client):
+            result = OpenAIAPITransport('approved-model', 'sk-test-key')({'url':'https://wisp.invalid/v1/responses',
+                'body':{'model':'approved-model'}}, 10)
+        self.assertEqual(destinations, ['https://api.openai.com/v1/responses'])
+        self.assertEqual(result['status'], 307)
+        self.assertEqual(result['body'], '')
+
+    def test_direct_api_missing_or_proxy_bound_key_stops_before_owner_launch(self):
+        from wisp_test_core.executor import launch_worker
+
+        secrets = types.ModuleType('agent.secret_scope')
+        cases = [({}, 'OPENAI_API_KEY_REQUIRED'),
+                 ({'OPENAI_API_KEY':'sk-test-key', 'OPENAI_BASE_URL':'https://proxy.example/v1'}, 'OPENAI_API_BASE_URL_REFUSED')]
+        with patch.dict(sys.modules, {'agent.secret_scope':secrets}), \
+             patch.dict('os.environ', {'OPENAI_API_KEY':'sk-other-profile'}), \
+             patch('wisp_test_core.executor.require_support'), patch('wisp_test_core.executor._launch_owner') as owner:
+            for values, code in cases:
+                secrets.load_env_file = lambda path: values
+                with self.assertRaisesRegex(ValueError, code):
+                    launch_worker(None, {'provider':'hermes-openai-api'}, {}, hermes_home=Path('/selected-profile'))
+            owner.assert_not_called()
 
     def test_command_boundary_has_no_host_home_or_network_and_candidate_is_readonly(self):
         from wisp_test_core.executor import check_argv
@@ -132,20 +209,24 @@ class ExecutorTests(unittest.TestCase):
                 "sys.stdin.readline()\n"
             )
             service = Service(root / 'state', launch=lambda task: None)
-            task = service.propose('chat', repo, {
-                'objective': 'Fixture', 'allowed_paths': ['app.py'],
-                'provider': 'hermes-openai-codex', 'model': 'fixture',
-            })
-            ident = task['objective_id']
-            service.approve('chat', ident, 1)
-            with patch('wisp_test_core.executor.require_support'):
-                run_task(service, ident, 1, {'bun': sys.executable, 'worker': str(worker), 'sdk': ''},
-                         transport=lambda request, timeout: {'status': 429})
-            task = service.store.load(ident)
-            self.assertEqual(task['status'], 'FAILED')
-            self.assertEqual(task['process_status'], 'PROCESS_TERMINATED')
-            self.assertEqual(task['error'], 'PROVIDER_REFUSED_429')
-            self.assertEqual([request['status'] for request in task['requests']], ['failed'])
+            for status in (400, 401, 403, 404, 422, 429):
+                with self.subTest(status=status):
+                    task = service.propose('chat', repo, {
+                        'objective': 'Fixture', 'allowed_paths': ['app.py'],
+                        'provider': 'hermes-openai-codex' if status == 429 else 'hermes-openai-api',
+                        'model': 'fixture',
+                    })
+                    ident = task['objective_id']
+                    service.approve('chat', ident, 1)
+                    with patch('wisp_test_core.executor.require_support'):
+                        run_task(service, ident, 1, {'bun': sys.executable, 'worker': str(worker), 'sdk': ''},
+                                 transport=lambda request, timeout: {'status': status, 'body': 'private-error-fixture'})
+                    task = service.store.load(ident)
+                    self.assertEqual(task['status'], 'FAILED')
+                    self.assertEqual(task['process_status'], 'PROCESS_TERMINATED')
+                    self.assertEqual(task['error'], f'PROVIDER_REFUSED_{status}')
+                    self.assertEqual([request['status'] for request in task['requests']], ['failed'])
+                    self.assertNotIn('private-error-fixture', json.dumps(task))
 
 
 if __name__ == '__main__': unittest.main()

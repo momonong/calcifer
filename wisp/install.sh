@@ -17,7 +17,8 @@ root=pathlib.Path(sys.argv[1]); raw=(root/'wisp.zip').read_bytes()
 if hashlib.sha256(raw).hexdigest()!=sys.argv[2]: raise SystemExit('Wisp archive SHA256 mismatch; nothing installed.')
 allowed={'launcher.py','install.py','wisp.ps1','wisp.cmd','README.md','manifest.json'}
 with zipfile.ZipFile(root/'wisp.zip') as z:
-    if set(z.namelist())!=allowed or len(z.namelist())!=len(allowed): raise SystemExit('Unexpected Wisp archive entries.')
+    names=set(z.namelist())
+    if not allowed<=names<=allowed|{'smoke.py'} or len(z.namelist())!=len(names): raise SystemExit('Unexpected Wisp archive entries.')
     if any(i.file_size>1024*1024 for i in z.infolist()): raise SystemExit('Oversized Wisp archive entry.')
     z.extractall(root/'payload')
 PY
